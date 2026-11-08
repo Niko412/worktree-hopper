@@ -39,6 +39,13 @@ test('the Marketplace fields are present', () => {
   assert.ok(fs.existsSync(path.join(root, 'LICENSE')), 'LICENSE is missing');
 });
 
+test('package-lock.json carries the same name and version', () => {
+  const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'));
+  assert.equal(lock.name, pkg.name);
+  assert.equal(lock.version, pkg.version);
+  assert.equal(lock.packages[''].version, pkg.version);
+});
+
 test('the CHANGELOG has an entry for the current version', () => {
   const newest = changelog.match(/^## (\d+\.\d+\.\d+)/m);
   assert.ok(newest, 'CHANGELOG.md has no version entry');

@@ -13,7 +13,7 @@ function sh(cwd, cmd, args) {
 }
 
 // A repo with an origin, package.json at `version`, a CHANGELOG entry, and the given earlier tags.
-function makeRepo({ version = '1.2.0', changelog = version, tags = [], released = false } = {}) {
+function makeRepo({ version = '1.2.0', changelog = version, lock = version, tags = [], released = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-'));
   const origin = path.join(dir, 'origin.git');
   const work = path.join(dir, 'work');
@@ -22,14 +22,15 @@ function makeRepo({ version = '1.2.0', changelog = version, tags = [], released 
   sh(dir, 'git', ['init', '-q', '-b', 'main', work]);
   const git = (...a) => sh(work, 'git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...a]);
   git('remote', 'add', 'origin', origin);
-  const commit = (v, c) => {
+  const commit = (v, c, l = v) => {
     fs.writeFileSync(path.join(work, 'package.json'), JSON.stringify({ name: 'x', version: v }));
+    fs.writeFileSync(path.join(work, 'package-lock.json'), JSON.stringify({ name: 'x', version: l, packages: { '': { version: l } } }));
     fs.writeFileSync(path.join(work, 'CHANGELOG.md'), `# Changelog\n\n## ${c}\n\n- change\n\n## 0.0.1\n`);
     git('add', '-A');
     git('commit', '-q', '-m', v);
   };
   for (const t of tags) { commit(t.slice(1), t.slice(1)); git('tag', t); }
-  commit(version, changelog);
+  commit(version, changelog, lock);
   git('push', '-q', 'origin', 'main', '--tags');
   fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin, 'gh'), `#!/bin/sh\nexit ${released ? 0 : 1}\n`, { mode: 0o755 });
@@ -69,6 +70,14 @@ test('package.json disagreeing with the tag is refused', () => {
   const r = guard(repo, 'tag', 'v1.3.0');
   assert.notEqual(r.code, 0);
   assert.match(r.out, /package\.json says 1\.2\.0/);
+});
+
+test('a package-lock.json disagreeing with the tag is refused', () => {
+  const repo = makeRepo({ version: '1.2.0', lock: '1.1.0' });
+  tagAndPush(repo, 'v1.2.0');
+  const r = guard(repo, 'tag', 'v1.2.0');
+  assert.notEqual(r.code, 0);
+  assert.match(r.out, /package-lock\.json says '1\.1\.0 1\.1\.0'/);
 });
 
 test('a CHANGELOG without an entry for the version is refused', () => {

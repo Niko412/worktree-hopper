@@ -51,10 +51,11 @@ The code: [extension.js](extension.js) (the extension host side), [media/](media
 
 A release is a `vX.Y.Z` tag on `main`; nothing else publishes.
 
-1. In an ordinary commit, bump `version` in `package.json` and add a `## X.Y.Z` entry at the top of `CHANGELOG.md`.
+1. In an ordinary commit, bump the version (`npm version X.Y.Z --no-git-tag-version` sets `package.json` and
+   `package-lock.json`) and add a `## X.Y.Z` entry at the top of `CHANGELOG.md`.
 2. Run `scripts/release.sh`. It tags `origin/main` at the version `package.json` writes, and pushes the tag.
 3. CI's release guard ([scripts/release-guard.sh](scripts/release-guard.sh)) refuses the tag unless it is
-   `vX.Y.Z`, `package.json` and the newest `CHANGELOG.md` entry carry that version, its commit is on `main`, it is
+   `vX.Y.Z`, `package.json`, `package-lock.json` and the newest `CHANGELOG.md` entry carry that version, its commit is on `main`, it is
    higher than every earlier release, and it was not released before. After the tests pass, CI builds the `.vsix`,
    checks the version inside it too, and attaches it to a GitHub release.
 4. CI then publishes that same `.vsix` to Open VSX and to the Visual Studio Marketplace, each once its

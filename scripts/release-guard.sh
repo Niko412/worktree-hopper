@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Refuses a release tag unless every version field agrees with it and it is a new, higher release on main.
-#   scripts/release-guard.sh tag <tag>          before building: tag form, package.json, CHANGELOG, main, order
+#   scripts/release-guard.sh tag <tag>          before building: tag form, package.json, package-lock.json,
+#                                               CHANGELOG, main, order
 #   scripts/release-guard.sh vsix <tag> <file>  after building: the version inside the .vsix
 set -euo pipefail
 
@@ -17,6 +18,11 @@ case "$stage" in
     pkg="$(node -p "require('./package.json').version")" || fail "cannot read package.json"
     [[ "$pkg" == "$version" ]] || fail "package.json says $pkg, tag says $version"
 
+    if [[ -f package-lock.json ]]; then
+      lock="$(node -p "const l=require('./package-lock.json'); l.version + ' ' + ((l.packages || {})[''] || {}).version")"
+      [[ "$lock" == "$version $version" ]] || fail "package-lock.json says '$lock', tag says $version"
+    fi
+
     changelog="$(grep -m1 -oE '^## [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | cut -c4-)" || true
     [[ "$changelog" == "$version" ]] || fail "CHANGELOG.md's newest entry is '${changelog:-none}', tag says $version"
 
@@ -31,7 +37,7 @@ case "$stage" in
       top="$(printf '%s\n%s\n' "$highest" "$tag" | sort -V | tail -n1)"
       [[ "$top" == "$tag" ]] || fail "$tag is not higher than the latest release $highest"
     fi
-    echo "release guard: $tag passes (package.json, CHANGELOG.md, on main, after ${highest:-nothing})"
+    echo "release guard: $tag passes (package.json, package-lock.json, CHANGELOG.md, on main, after ${highest:-nothing})"
     ;;
   vsix)
     file="${3:-}"
