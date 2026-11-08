@@ -57,8 +57,24 @@ A release is a `vX.Y.Z` tag on `main`; nothing else publishes.
    `vX.Y.Z`, `package.json` and the newest `CHANGELOG.md` entry carry that version, its commit is on `main`, it is
    higher than every earlier release, and it was not released before. After the tests pass, CI builds the `.vsix`,
    checks the version inside it too, and attaches it to a GitHub release.
-4. Upload that `.vsix` to the [Marketplace](https://marketplace.visualstudio.com/manage) (New extension → Visual
-   Studio Code, or Update) and to Open VSX (`npx ovsx publish worktree-hopper-X.Y.Z.vsix -p <token>`).
+4. CI then publishes that same `.vsix` to Open VSX and to the Visual Studio Marketplace, each once its
+   credentials are set up (below). Until then the job says so and skips, and the `.vsix` is uploaded by hand: the
+   [Marketplace](https://marketplace.visualstudio.com/manage) (Update) and `npx ovsx publish <file> -p <token>`.
+
+### Publishing from CI
+
+- **Open VSX:** create an access token at open-vsx.org (profile → Access Tokens) and add it as the repository
+  secret `OVSX_PAT`.
+- **Visual Studio Marketplace**, without a stored secret (Entra ID with GitHub's OIDC token; Azure DevOps personal
+  access tokens for all organisations stop working on 1 December 2026):
+  1. In the Azure portal, **Microsoft Entra ID → App registrations → New registration** (free, no subscription).
+  2. In it, **Certificates & secrets → Federated credentials → Add**: *GitHub Actions deploying Azure resources*,
+     organisation `Niko412`, repository `worktree-hopper`, entity *Environment*, name `marketplace`. That
+     environment exists in this repository and only `v*` tags may run in it.
+  3. Add the app as a member of the publisher on the
+     [Marketplace management page](https://marketplace.visualstudio.com/manage) (Members → Add, role
+     *Contributor*), by the user id Azure DevOps gives the app.
+  4. Add the repository **variables** `AZURE_CLIENT_ID` (the app's client id) and `AZURE_TENANT_ID`.
 
 Tags `v*` cannot be moved or deleted, and `main` cannot be force-pushed or deleted (repository rulesets).
 

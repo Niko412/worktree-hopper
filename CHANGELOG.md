@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.6.0
+## 1.0.0
+
+First Marketplace and Open VSX release.
+
 
 - Renamed to **Worktree Hopper** (`NikolayChernuha.worktree-hopper`): "Worktree Switch" was taken on the Marketplace.
   Settings and commands are now `worktreeHopper.*`; the repository is `Niko412/worktree-hopper`.
