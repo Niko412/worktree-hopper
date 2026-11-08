@@ -1,8 +1,8 @@
 {
-  "name": "worktree-switch",
-  "displayName": "Worktree Switch",
+  "name": "worktree-hopper",
+  "displayName": "Worktree Hopper",
   "description": "A Worktrees panel in Source Control: search by text or regex and switch git worktrees in place, without reloading the window.",
-  "version": "0.5.1",
+  "version": "1.0.0",
   "publisher": "NikolayChernuha",
   "author": {
     "name": "Nikolay Chernuha"
@@ -11,11 +11,11 @@
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Niko412/worktree-switch.git"
+    "url": "https://github.com/Niko412/worktree-hopper.git"
   },
-  "homepage": "https://github.com/Niko412/worktree-switch#readme",
+  "homepage": "https://github.com/Niko412/worktree-hopper#readme",
   "bugs": {
-    "url": "https://github.com/Niko412/worktree-switch/issues"
+    "url": "https://github.com/Niko412/worktree-hopper/issues"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -49,7 +49,7 @@
       "scm": [
         {
           "type": "webview",
-          "id": "worktreeSwitch.view",
+          "id": "worktreeHopper.view",
           "name": "Worktrees",
           "icon": "$(list-tree)",
           "visibility": "visible"
@@ -58,35 +58,35 @@
     },
     "commands": [
       {
-        "command": "worktreeSwitch.refresh",
+        "command": "worktreeHopper.refresh",
         "title": "Refresh Worktrees",
         "icon": "$(refresh)"
       },
       {
-        "command": "worktreeSwitch.focus",
+        "command": "worktreeHopper.focus",
         "title": "Switch Worktree…"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "worktreeSwitch.refresh",
-          "when": "view == worktreeSwitch.view",
+          "command": "worktreeHopper.refresh",
+          "when": "view == worktreeHopper.view",
           "group": "navigation"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "worktreeSwitch.focus",
+        "command": "worktreeHopper.focus",
         "key": "ctrl+alt+w",
         "mac": "cmd+alt+w"
       }
     ],
     "configuration": {
-      "title": "Worktree Switch",
+      "title": "Worktree Hopper",
       "properties": {
-        "worktreeSwitch.openIn": {
+        "worktreeHopper.openIn": {
           "type": "string",
           "enum": [
             "sameWindow",
@@ -95,7 +95,7 @@
           "default": "sameWindow",
           "description": "Where a click opens the worktree. Alt+click (or the window icon) does the other."
         },
-        "worktreeSwitch.switchMode": {
+        "worktreeHopper.switchMode": {
           "type": "string",
           "enum": [
             "hot",
@@ -108,22 +108,22 @@
           "default": "hot",
           "description": "How switching in the current window works."
         },
-        "worktreeSwitch.moveEditors": {
+        "worktreeHopper.moveEditors": {
           "type": "boolean",
           "default": true,
           "description": "On a hot switch, reopen open editors at the same path in the new worktree (unsaved ones stay)."
         },
-        "worktreeSwitch.followInGit": {
+        "worktreeHopper.followInGit": {
           "type": "boolean",
           "default": true,
           "description": "On a hot switch, close the previous worktree's repository in Source Control so Changes and the Graph show only the active one."
         },
-        "worktreeSwitch.revealInGraph": {
+        "worktreeHopper.revealInGraph": {
           "type": "boolean",
           "default": true,
           "description": "After a hot switch, scroll the Graph to the worktree's current commit."
         },
-        "worktreeSwitch.hidePrunable": {
+        "worktreeHopper.hidePrunable": {
           "type": "boolean",
           "default": false,
           "description": "Hide worktrees whose folder is gone (git marks them prunable)."

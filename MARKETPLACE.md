@@ -1,24 +1,24 @@
-# Worktree Switch
+# Worktree Hopper
 
-[![Build](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml/badge.svg)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
-[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/NikolayChernuha.worktree-switch?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-switch)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/NikolayChernuha.worktree-switch)](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-switch)
-[![Open VSX](https://img.shields.io/open-vsx/v/NikolayChernuha/worktree-switch?label=Open%20VSX)](https://open-vsx.org/extension/NikolayChernuha/worktree-switch)
-[![Tested on VS Code](https://img.shields.io/badge/tested%20on%20VS%20Code-1.85%20%7C%20stable-007ACC)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
-[![Tested on](https://img.shields.io/badge/tested%20on-Linux%20%7C%20Windows%20%7C%20macOS-555)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/Niko412/worktree-switch/blob/main/LICENSE)
+[![Build](https://github.com/Niko412/worktree-hopper/actions/workflows/build.yml/badge.svg)](https://github.com/Niko412/worktree-hopper/actions/workflows/build.yml)
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/NikolayChernuha.worktree-hopper?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-hopper)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/NikolayChernuha.worktree-hopper)](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-hopper)
+[![Open VSX](https://img.shields.io/open-vsx/v/NikolayChernuha/worktree-hopper?label=Open%20VSX)](https://open-vsx.org/extension/NikolayChernuha/worktree-hopper)
+[![Tested on VS Code](https://img.shields.io/badge/tested%20on%20VS%20Code-1.85%20%7C%20stable-007ACC)](https://github.com/Niko412/worktree-hopper/actions/workflows/build.yml)
+[![Tested on](https://img.shields.io/badge/tested%20on-Linux%20%7C%20Windows%20%7C%20macOS-555)](https://github.com/Niko412/worktree-hopper/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/Niko412/worktree-hopper/blob/main/LICENSE)
 
 **Switch git worktrees from the Source Control view, in place, without reloading the window.**
 
 A **Worktrees** panel sits under Changes and the Graph. Type a few letters of a folder, branch or path, press Enter,
 and the window is on that worktree, with your open files, the Graph and Changes following along.
 
-![The Worktrees panel in Source Control](https://raw.githubusercontent.com/Niko412/worktree-switch/main/images/screenshot.png)
+![The Worktrees panel in Source Control](https://raw.githubusercontent.com/Niko412/worktree-hopper/main/images/screenshot.png)
 
 ## Why
 
 If you keep a worktree per task or pull request, getting to the right one means *File → Open Folder*, a full
-reload, and losing your terminals and chat. With Worktree Switch it is one click, and nothing restarts.
+reload, and losing your terminals and chat. With Worktree Hopper it is one click, and nothing restarts.
 
 ## Features
 
@@ -55,18 +55,18 @@ the folder you opened stays first, and the active worktree is swapped in as a se
 - **Every switch after that is instant.**
 - Switching back to the first folder removes the second one.
 
-Prefer one folder per window? Set `worktreeSwitch.switchMode` to `reload`.
+Prefer one folder per window? Set `worktreeHopper.switchMode` to `reload`.
 
 ## Settings
 
 | Setting | Default | What it does |
 |---|---|---|
-| `worktreeSwitch.switchMode` | `hot` | `hot` swaps the worktree in place; `reload` reopens the window on it. |
-| `worktreeSwitch.openIn` | `sameWindow` | Where a plain click opens. Alt+click does the other. |
-| `worktreeSwitch.moveEditors` | `true` | On a hot switch, reopen open editors in the new worktree. |
-| `worktreeSwitch.followInGit` | `true` | On a hot switch, show only the active worktree in Source Control. |
-| `worktreeSwitch.revealInGraph` | `true` | After a hot switch, scroll the Graph to the worktree's current commit. |
-| `worktreeSwitch.hidePrunable` | `false` | Hide worktrees whose folder is gone. |
+| `worktreeHopper.switchMode` | `hot` | `hot` swaps the worktree in place; `reload` reopens the window on it. |
+| `worktreeHopper.openIn` | `sameWindow` | Where a plain click opens. Alt+click does the other. |
+| `worktreeHopper.moveEditors` | `true` | On a hot switch, reopen open editors in the new worktree. |
+| `worktreeHopper.followInGit` | `true` | On a hot switch, show only the active worktree in Source Control. |
+| `worktreeHopper.revealInGraph` | `true` | After a hot switch, scroll the Graph to the worktree's current commit. |
+| `worktreeHopper.hidePrunable` | `false` | Hide worktrees whose folder is gone. |
 
 ## Tips
 
@@ -82,4 +82,4 @@ Prefer one folder per window? Set `worktreeSwitch.switchMode` to `reload`.
 
 ## Feedback
 
-Found a bug or have an idea? [Open an issue](https://github.com/Niko412/worktree-switch/issues).
+Found a bug or have an idea? [Open an issue](https://github.com/Niko412/worktree-hopper/issues).

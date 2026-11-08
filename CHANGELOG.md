@@ -1,27 +1,26 @@
 # Changelog
 
-## 0.5.1
+## 1.0.0
 
-- Published under the Marketplace publisher `NikolayChernuha` (the extension id is now
-  `NikolayChernuha.worktree-switch`).
+First release on the Visual Studio Marketplace and Open VSX, as **Worktree Hopper**
+(`NikolayChernuha.worktree-hopper`).
 
-## 0.5.0
+- **Worktrees panel in Source Control**, under Changes and the Graph: every worktree with its branch (or detached
+  commit) and tags for `main`, `open`, `gone` and `locked`; ● marks the active one.
+- **Search** by folder name, branch or path, with matches highlighted; **Alt+R** or `.*` toggles regular expressions.
+- **Hot switch, no reload:** the active worktree is swapped in as a second workspace folder, so extensions,
+  terminals and chat panels keep running. The first switch turns the window multi-root once.
+- **Open editors move** to the same files in the new worktree; unsaved ones stay.
+- **Source Control and the Graph follow** the active worktree, and the Graph scrolls to its current commit.
+- **Delete a worktree** (🗑 or the Delete key) after a Yes/Cancel question; uncommitted changes or a lock ask a
+  second time before it is forced. The branch is kept.
+- **New window** with Alt+click or ⧉; full-reload switching is the `worktreeHopper.switchMode` setting.
+- **Keyboard:** Ctrl+Alt+W (Cmd+Alt+W) jumps to the search; ↑/↓, Enter, Alt+Enter, Delete, Esc.
+- Works locally and over Remote SSH, WSL and Dev Containers; paths reached through a symlink or a Windows short
+  name are recognised as the same worktree.
+- Tested in CI on VS Code 1.85.0 and stable, on Linux, Windows and macOS.
 
-- Delete a worktree from its row (🗑, or the Delete key) after a Yes/Cancel question. A worktree with uncommitted
-  changes, or a locked one, asks a second time before it is forced. The branch is kept.
-- Switching again right after a switch no longer gets lost: VS Code refuses a folder change while confirming the last
-  one, so the switch retries and waits for it.
-- Folders reached through a symlink or a Windows short name (`RUNNER~1`) are recognised as the same worktree.
-- Works on Windows paths (git's `C:/x` and VS Code's `c:\x` are the same folder).
-- Tested in CI: unit tests, and integration tests in a real VS Code (1.85.0 and stable, on Linux, Windows and macOS).
-- Release tags are guarded: package.json, the CHANGELOG and the built .vsix must all carry the tag's version.
+## Before 1.0.0
 
-## 0.4.0
-
-First public release.
-
-- Worktrees panel inside Source Control, with text or regex search (Alt+R).
-- Hot switch: the active worktree swaps as a second workspace folder, so the window does not reload.
-- Open editors move to the same files in the new worktree; unsaved ones stay.
-- Source Control and its Graph follow the active worktree, and the Graph scrolls to its current commit.
-- Open in a new window with Alt+click or the window button; full-reload switching is a setting.
+Pre-releases 0.4.0 to 0.5.1 were published on GitHub only, under the name *Worktree Switch*, which was already taken
+on the Marketplace.

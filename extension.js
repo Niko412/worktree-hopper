@@ -1,4 +1,4 @@
-// Worktree Switch: a webview panel in the Source Control sidebar listing `git worktree list`.
+// Worktree Hopper: a webview panel in the Source Control sidebar listing `git worktree list`.
 const vscode = require('vscode');
 const cp = require('child_process');
 const path = require('path');
@@ -111,9 +111,9 @@ class WorktreeView {
     view.onDidChangeVisibility(() => view.visible && this.refresh());
     this.refresh().then(() => {
       const r = this.roots();
-      if (r.slotIdx > 0 && vscode.workspace.getConfiguration('worktreeSwitch').get('followInGit')) {
+      if (r.slotIdx > 0 && vscode.workspace.getConfiguration('worktreeHopper').get('followInGit')) {
         followInGit(r.anchor.uri.fsPath, r.active)
-          .then(() => vscode.workspace.getConfiguration('worktreeSwitch').get('revealInGraph') && revealGraphHead(r.active, (m) => this.log(m)))
+          .then(() => vscode.workspace.getConfiguration('worktreeHopper').get('revealInGraph') && revealGraphHead(r.active, (m) => this.log(m)))
           .catch((e) => this.log('git: ' + e.message));
       }
     });
@@ -139,7 +139,7 @@ class WorktreeView {
       let items = parsePorcelain(await git(top, ['worktree', 'list', '--porcelain']));
       this.paths = new Set(items.map((i) => norm(i.path)));
       const r = this.roots();
-      if (vscode.workspace.getConfiguration('worktreeSwitch').get('hidePrunable')) items = items.filter((i) => !i.prunable);
+      if (vscode.workspace.getConfiguration('worktreeHopper').get('hidePrunable')) items = items.filter((i) => !i.prunable);
       const main = items[0] && items[0].path;
       const open = new Set(folders.map((f) => norm(f.uri.fsPath)));
       for (const i of items) {
@@ -151,7 +151,7 @@ class WorktreeView {
       this.items = items;
       this.repoTop = top;
       this.watch(commonDir);
-      this.post({ type: 'list', items, openIn: vscode.workspace.getConfiguration('worktreeSwitch').get('openIn') });
+      this.post({ type: 'list', items, openIn: vscode.workspace.getConfiguration('worktreeHopper').get('openIn') });
     } catch (e) {
       this.post({ type: 'error', text: 'Not a git repository: ' + cwd });
     }
@@ -162,12 +162,12 @@ class WorktreeView {
     if (!anchor) return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(target), { forceReuseWindow: true });
     if (active && norm(active) === norm(target)) return;
     const name = path.basename(target);
-    const cfg = vscode.workspace.getConfiguration('worktreeSwitch');
+    const cfg = vscode.workspace.getConfiguration('worktreeHopper');
     const toAnchor = norm(target) === norm(anchor.uri.fsPath);
     if (!toAnchor && slotIdx < 0 && !vscode.workspace.workspaceFile) {
       // First switch: the window turns multi-root and this extension restarts, so move editors before that.
       if (cfg.get('moveEditors')) await moveEditors(active, target);
-      vscode.window.setStatusBarMessage('Worktree Switch: window becomes multi-root once; later switches are instant', 5000);
+      vscode.window.setStatusBarMessage('Worktree Hopper: window becomes multi-root once; later switches are instant', 5000);
       vscode.workspace.updateWorkspaceFolders(folders.length, 0, { uri: vscode.Uri.file(target), name });
       return;
     }
@@ -209,7 +209,7 @@ class WorktreeView {
         return;
       }
       if (msg.newWindow) return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), { forceNewWindow: true });
-      if (vscode.workspace.getConfiguration('worktreeSwitch').get('switchMode') === 'hot') return this.hotSwitch(msg.path);
+      if (vscode.workspace.getConfiguration('worktreeHopper').get('switchMode') === 'hot') return this.hotSwitch(msg.path);
       return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), { forceReuseWindow: true });
     }
     if (msg.type === 'delete') return this.deleteWorktree(msg.path);
@@ -238,7 +238,7 @@ class WorktreeView {
     if (!(await this.ask(`Delete worktree ${item.name}?`, `${where} ${branch}`))) return false;
     const cwd = this.repoTop;
     try {
-      await git(cwd, removeArgs(item.path, null));
+      await this.removeWorktree(cwd, item, null);
     } catch (e) {
       const refusal = removeRefusal(e.message);
       if (!refusal) { vscode.window.showErrorMessage(`Could not delete ${item.name}: ${e.message.trim()}`); return false; }
@@ -247,7 +247,7 @@ class WorktreeView {
         : `${item.name} has uncommitted or untracked changes. They will be lost.`;
       if (!(await this.ask(`${why} Delete it anyway?`, `This deletes the folder ${item.path}. ${branch}`))) return false;
       try {
-        await git(cwd, removeArgs(item.path, refusal));
+        await this.removeWorktree(cwd, item, refusal);
       } catch (e2) {
         vscode.window.showErrorMessage(`Could not delete ${item.name}: ${e2.message.trim()}`);
         return false;
@@ -258,8 +258,33 @@ class WorktreeView {
     return true;
   }
 
+  // git worktree remove, retried: on Windows a file watcher can hold the folder for a moment.
+  // A refusal that needs the user's answer (changes, lock) is thrown at once. If git has already
+  // let go of the worktree but its folder is still there, the folder is removed here.
+  async removeWorktree(cwd, item, refusal) {
+    let last;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      try {
+        await git(cwd, removeArgs(item.path, refusal));
+        return;
+      } catch (e) {
+        last = e;
+        this.log(`remove ${item.name} (attempt ${attempt + 1}): ${e.message.trim()}`);
+        if (!refusal && removeRefusal(e.message)) throw e;
+        const listed = parsePorcelain(await git(cwd, ['worktree', 'list', '--porcelain']))
+          .some((i) => norm(i.path) === norm(item.path));
+        if (!listed) {
+          fs.rmSync(item.path, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+          return;
+        }
+        await sleep(400);
+      }
+    }
+    throw last;
+  }
+
   log(m) {
-    if (!this.out) this.out = vscode.window.createOutputChannel('Worktree Switch');
+    if (!this.out) this.out = vscode.window.createOutputChannel('Worktree Hopper');
     this.out.appendLine(new Date().toISOString().slice(11, 19) + ' ' + m);
   }
 
@@ -290,14 +315,14 @@ class WorktreeView {
 function activate(context) {
   const provider = new WorktreeView(context);
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider('worktreeSwitch.view', provider, { webviewOptions: { retainContextWhenHidden: true } }),
-    vscode.commands.registerCommand('worktreeSwitch.refresh', () => provider.refresh()),
-    vscode.commands.registerCommand('worktreeSwitch.focus', async () => {
-      await vscode.commands.executeCommand('worktreeSwitch.view.focus');
+    vscode.window.registerWebviewViewProvider('worktreeHopper.view', provider, { webviewOptions: { retainContextWhenHidden: true } }),
+    vscode.commands.registerCommand('worktreeHopper.refresh', () => provider.refresh()),
+    vscode.commands.registerCommand('worktreeHopper.focus', async () => {
+      await vscode.commands.executeCommand('worktreeHopper.view.focus');
       provider.focusSearch();
     }),
     vscode.workspace.onDidChangeWorkspaceFolders(() => provider.refresh()),
-    vscode.workspace.onDidChangeConfiguration((e) => e.affectsConfiguration('worktreeSwitch') && provider.refresh()),
+    vscode.workspace.onDidChangeConfiguration((e) => e.affectsConfiguration('worktreeHopper') && provider.refresh()),
     { dispose: () => provider.watchers.forEach((w) => w.dispose()) },
   );
   provider.refresh();

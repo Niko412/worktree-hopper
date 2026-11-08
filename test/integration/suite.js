@@ -32,18 +32,18 @@ async function run() {
     try { await fn(); results.push(`ok - ${name}`); } catch (e) { results.push(`not ok - ${name}: ${e.message}`); }
   };
 
-  const ext = vscode.extensions.all.find((e) => e.packageJSON.name === 'worktree-switch');
+  const ext = vscode.extensions.all.find((e) => e.packageJSON.name === 'worktree-hopper');
   assert.ok(ext, 'extension not found');
   const { provider } = await ext.activate();
   await provider.refresh();
 
   await step('commands are registered', async () => {
     const all = await vscode.commands.getCommands(true);
-    for (const c of ['worktreeSwitch.refresh', 'worktreeSwitch.focus']) assert.ok(all.includes(c), c);
+    for (const c of ['worktreeHopper.refresh', 'worktreeHopper.focus']) assert.ok(all.includes(c), c);
   });
 
   await step('the Worktrees view opens and focuses its search', async () => {
-    await vscode.commands.executeCommand('worktreeSwitch.focus');
+    await vscode.commands.executeCommand('worktreeHopper.focus');
   });
 
   await step('lists the three worktrees', async () => {
