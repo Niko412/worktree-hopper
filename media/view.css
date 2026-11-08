@@ -1,0 +1,40 @@
+body { padding: 0 8px 8px 20px; color: var(--vscode-foreground); font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); }
+.search { position: relative; margin: 4px 0 2px; }
+.search input {
+  width: 100%; box-sizing: border-box; padding: 4px 30px 4px 6px;
+  background: var(--vscode-input-background); color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, transparent); border-radius: 2px; outline: none;
+  font: inherit;
+}
+.search input:focus { border-color: var(--vscode-focusBorder); }
+.search input.bad { border-color: var(--vscode-inputValidation-errorBorder); }
+.search input::placeholder { color: var(--vscode-input-placeholderForeground); }
+.toggle {
+  position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+  height: 20px; min-width: 22px; padding: 0 3px; border: 1px solid transparent; border-radius: 3px;
+  background: transparent; color: var(--vscode-input-foreground); cursor: pointer;
+  font-family: var(--vscode-editor-font-family); font-size: 11px;
+}
+.toggle:hover { background: var(--vscode-inputOption-hoverBackground); }
+.toggle[aria-pressed="true"] {
+  background: var(--vscode-inputOption-activeBackground);
+  border-color: var(--vscode-inputOption-activeBorder); color: var(--vscode-inputOption-activeForeground);
+}
+.count { font-size: 11px; opacity: .7; margin: 2px 0 4px; min-height: 14px; }
+ul { list-style: none; margin: 0; padding: 0; }
+li {
+  display: flex; align-items: center; gap: 6px; padding: 0 4px; height: 22px; cursor: pointer;
+  border: 1px solid transparent; border-radius: 2px; white-space: nowrap;
+}
+li:hover { background: var(--vscode-list-hoverBackground); }
+li.sel { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
+li.cur .name { font-weight: 600; }
+li.gone { opacity: .5; }
+li .dot { width: 8px; flex: none; text-align: center; color: var(--vscode-gitDecoration-addedResourceForeground); }
+li .name { overflow: hidden; text-overflow: ellipsis; }
+li .branch { opacity: .75; overflow: hidden; text-overflow: ellipsis; flex: 1; font-size: 12px; }
+li .tag { font-size: 10px; padding: 0 4px; border-radius: 8px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
+li .act { visibility: hidden; border: none; background: transparent; color: inherit; cursor: pointer; padding: 0 2px; font-size: 13px; }
+li:hover .act, li.sel .act { visibility: visible; }
+mark { background: var(--vscode-editor-findMatchHighlightBackground); color: inherit; }
+.err { opacity: .8; font-style: italic; }

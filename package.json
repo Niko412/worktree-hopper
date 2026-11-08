@@ -1,0 +1,134 @@
+{
+  "name": "worktree-switch",
+  "displayName": "Worktree Switch",
+  "description": "A Worktrees panel in Source Control: search by text or regex and switch git worktrees in place, without reloading the window.",
+  "version": "0.4.0",
+  "publisher": "niko412",
+  "author": {
+    "name": "Nikolay Chernuha"
+  },
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Niko412/worktree-switch.git"
+  },
+  "homepage": "https://github.com/Niko412/worktree-switch#readme",
+  "bugs": {
+    "url": "https://github.com/Niko412/worktree-switch/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "SCM Providers",
+    "Other"
+  ],
+  "keywords": [
+    "git",
+    "worktree",
+    "worktrees",
+    "switch",
+    "source control",
+    "scm",
+    "branch"
+  ],
+  "galleryBanner": {
+    "color": "#1e293b",
+    "theme": "dark"
+  },
+  "main": "./extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "workspaceContains:.git"
+  ],
+  "contributes": {
+    "views": {
+      "scm": [
+        {
+          "type": "webview",
+          "id": "worktreeSwitch.view",
+          "name": "Worktrees",
+          "icon": "$(list-tree)",
+          "visibility": "visible"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "worktreeSwitch.refresh",
+        "title": "Refresh Worktrees",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "worktreeSwitch.focus",
+        "title": "Switch Worktree…"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "worktreeSwitch.refresh",
+          "when": "view == worktreeSwitch.view",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "worktreeSwitch.focus",
+        "key": "ctrl+alt+w",
+        "mac": "cmd+alt+w"
+      }
+    ],
+    "configuration": {
+      "title": "Worktree Switch",
+      "properties": {
+        "worktreeSwitch.openIn": {
+          "type": "string",
+          "enum": [
+            "sameWindow",
+            "newWindow"
+          ],
+          "default": "sameWindow",
+          "description": "Where a click opens the worktree. Alt+click (or the window icon) does the other."
+        },
+        "worktreeSwitch.switchMode": {
+          "type": "string",
+          "enum": [
+            "hot",
+            "reload"
+          ],
+          "enumDescriptions": [
+            "Swap the worktree as a second workspace folder: no reload, extensions keep running. The first switch turns the window multi-root once.",
+            "Reopen the window on the worktree (full reload)."
+          ],
+          "default": "hot",
+          "description": "How switching in the current window works."
+        },
+        "worktreeSwitch.moveEditors": {
+          "type": "boolean",
+          "default": true,
+          "description": "On a hot switch, reopen open editors at the same path in the new worktree (unsaved ones stay)."
+        },
+        "worktreeSwitch.followInGit": {
+          "type": "boolean",
+          "default": true,
+          "description": "On a hot switch, close the previous worktree's repository in Source Control so Changes and the Graph show only the active one."
+        },
+        "worktreeSwitch.revealInGraph": {
+          "type": "boolean",
+          "default": true,
+          "description": "After a hot switch, scroll the Graph to the worktree's current commit."
+        },
+        "worktreeSwitch.hidePrunable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Hide worktrees whose folder is gone (git marks them prunable)."
+        }
+      }
+    }
+  }
+}
