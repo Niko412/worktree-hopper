@@ -5,7 +5,9 @@ const path = require('path');
 const fs = require('fs');
 const { parsePorcelain, removeRefusal, removeArgs, normalizePath } = require('./lib/worktrees');
 
-const norm = (p) => normalizePath(p, process.platform);
+// Real path first (symlinks, Windows short names like RUNNER~1), then one comparable form.
+const realpath = (p) => { try { return fs.realpathSync.native(p); } catch (e) { return p; } };
+const norm = (p) => normalizePath(realpath(p), process.platform);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function git(cwd, args) {

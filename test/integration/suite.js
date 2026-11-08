@@ -3,8 +3,12 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const vscode = require('vscode');
 
-const same = (p) => { const r = path.resolve(p); return process.platform === 'win32' ? r.toLowerCase() : r; };
 const fs = require('node:fs');
+const same = (p) => {
+  let r = path.resolve(p);
+  try { r = fs.realpathSync.native(r); } catch (e) { /* gone: compare as given */ }
+  return process.platform === 'win32' ? r.toLowerCase() : r;
+};
 const root = process.env.WTS_ROOT;
 const MAIN = path.join(root, 'main');
 const ONE = path.join(root, 'wt-one');

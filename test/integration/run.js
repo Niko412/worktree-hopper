@@ -7,7 +7,7 @@ const { execFileSync } = require('node:child_process');
 const { runTests } = require('@vscode/test-electron');
 
 function makeRepo() {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'wts-')));
+  const dir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'wts-')));
   const main = path.join(dir, 'main');
   const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd });
   fs.mkdirSync(main);
