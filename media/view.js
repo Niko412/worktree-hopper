@@ -13,42 +13,18 @@
   q.value = state.q;
   rx.setAttribute('aria-pressed', String(state.regex));
 
-  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const { esc, buildMatcher, highlight, filterItems } = window.WorktreeFilter;
 
   function matcher() {
-    const text = q.value.trim();
-    q.classList.remove('bad');
-    if (!text) return null;
-    try {
-      return state.regex ? new RegExp(text, 'gi') : new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    } catch (e) {
-      q.classList.add('bad');
-      return undefined;
-    }
-  }
-
-  function highlight(s, re) {
-    if (!re) return esc(s);
-    let out = '', last = 0;
-    re.lastIndex = 0;
-    for (const m of s.matchAll(re)) {
-      if (!m[0]) break;
-      out += esc(s.slice(last, m.index)) + '<mark>' + esc(m[0]) + '</mark>';
-      last = m.index + m[0].length;
-    }
-    return out + esc(s.slice(last));
+    const re = buildMatcher(q.value, state.regex);
+    q.classList.toggle('bad', re === undefined);
+    return re;
   }
 
   function render() {
     const re = matcher();
     if (re === undefined) { count.textContent = 'Invalid regular expression'; return; }
-    shown = items.filter((i) => {
-      if (!re) return true;
-      re.lastIndex = 0; const a = re.test(i.name);
-      re.lastIndex = 0; const b = re.test(i.branch || i.head);
-      re.lastIndex = 0; const c = re.test(i.path);
-      return a || b || c;
-    });
+    shown = filterItems(items, re);
     if (sel >= shown.length) sel = Math.max(0, shown.length - 1);
     count.textContent = re ? `${shown.length} of ${items.length}` : `${items.length} worktrees`;
     list.innerHTML = shown.map((i, n) => {
@@ -62,6 +38,7 @@
         <button class="act" data-act="here" title="Switch in this window">↪</button>
         <button class="act" data-act="new" title="Open in new window">⧉</button>
         <button class="act" data-act="copy" title="Copy path">⎘</button>
+        ${i.main || i.current || i.open ? '' : '<button class="act del" data-act="delete" title="Delete worktree…">🗑</button>'}
       </li>`;
     }).join('');
   }
@@ -83,6 +60,9 @@
     if (e.key === 'ArrowDown') { sel = Math.min(sel + 1, shown.length - 1); render(); e.preventDefault(); }
     else if (e.key === 'ArrowUp') { sel = Math.max(sel - 1, 0); render(); e.preventDefault(); }
     else if (e.key === 'Enter') { open(sel, e.altKey); }
+    else if (e.key === 'Delete' && shown[sel] && !shown[sel].main && !shown[sel].current && !shown[sel].open) {
+      vscode.postMessage({ type: 'delete', path: shown[sel].path }); e.preventDefault();
+    }
     else if (e.key === 'Escape') { q.value = ''; save(); render(); }
     else if (e.altKey && (e.key === 'r' || e.key === 'R')) { rx.click(); e.preventDefault(); }
   });
@@ -91,6 +71,7 @@
     const n = Number(li.dataset.n);
     const act = e.target.dataset && e.target.dataset.act;
     if (act === 'copy') return vscode.postMessage({ type: 'copy', path: shown[n].path });
+    if (act === 'delete') return vscode.postMessage({ type: 'delete', path: shown[n].path });
     if (act === 'here') return open(n, false, false);
     if (act === 'new') return open(n, false, true);
     open(n, e.altKey);
