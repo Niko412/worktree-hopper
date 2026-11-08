@@ -25,7 +25,7 @@ async function run() {
   } else {
     const main = same(path.join(process.env.WTS_ROOT, 'main'));
     assert.equal(provider.lastState.type, 'list', JSON.stringify(provider.lastState));
-    assert.equal(provider.paths.size, 3);
+    assert.equal(provider.paths.size, 2); // main and wt-one: the first suite deleted wt-two
     assert.ok(provider.paths.has(main));
     console.log('ok - the repository is found when the first folder is not one');
   }
