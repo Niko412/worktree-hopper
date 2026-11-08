@@ -1,12 +1,12 @@
-# Worktree Switch
+# Worktree Hopper
 
-[![Build](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml/badge.svg)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
-[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/NikolayChernuha.worktree-switch?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-switch)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/NikolayChernuha.worktree-switch)](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-switch)
-[![Open VSX](https://img.shields.io/open-vsx/v/NikolayChernuha/worktree-switch?label=Open%20VSX)](https://open-vsx.org/extension/NikolayChernuha/worktree-switch)
-[![GitHub release](https://img.shields.io/github/v/release/Niko412/worktree-switch)](https://github.com/Niko412/worktree-switch/releases)
-[![Tested on VS Code](https://img.shields.io/badge/tested%20on%20VS%20Code-1.85%20%7C%20stable-007ACC)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
-[![Tested on](https://img.shields.io/badge/tested%20on-Linux%20%7C%20Windows%20%7C%20macOS-555)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
+[![Build](https://github.com/Niko412/worktree-hopper/actions/workflows/build.yml/badge.svg)](https://github.com/Niko412/worktree-hopper/actions/workflows/build.yml)
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/NikolayChernuha.worktree-hopper?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-hopper)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/NikolayChernuha.worktree-hopper)](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-hopper)
+[![Open VSX](https://img.shields.io/open-vsx/v/NikolayChernuha/worktree-hopper?label=Open%20VSX)](https://open-vsx.org/extension/NikolayChernuha/worktree-hopper)
+[![GitHub release](https://img.shields.io/github/v/release/Niko412/worktree-hopper)](https://github.com/Niko412/worktree-hopper/releases)
+[![Tested on VS Code](https://img.shields.io/badge/tested%20on%20VS%20Code-1.85%20%7C%20stable-007ACC)](https://github.com/Niko412/worktree-hopper/actions/workflows/build.yml)
+[![Tested on](https://img.shields.io/badge/tested%20on-Linux%20%7C%20Windows%20%7C%20macOS-555)](https://github.com/Niko412/worktree-hopper/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 A VS Code extension: a **Worktrees** panel in the Source Control view. Search git worktrees by text or regex and
@@ -18,11 +18,11 @@ The Marketplace listing, with every feature, key and setting, is [MARKETPLACE.md
 
 ## Install
 
-- **VS Code:** search *Worktree Switch* in the Extensions view, or
-  [install from the Marketplace](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-switch).
-- **Cursor, VSCodium, Windsurf:** install from [Open VSX](https://open-vsx.org/extension/NikolayChernuha/worktree-switch).
-- **By hand:** download the `.vsix` from [Releases](https://github.com/Niko412/worktree-switch/releases), then
-  `code --install-extension worktree-switch-X.Y.Z.vsix`.
+- **VS Code:** search *Worktree Hopper* in the Extensions view, or
+  [install from the Marketplace](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-hopper).
+- **Cursor, VSCodium, Windsurf:** install from [Open VSX](https://open-vsx.org/extension/NikolayChernuha/worktree-hopper).
+- **By hand:** download the `.vsix` from [Releases](https://github.com/Niko412/worktree-hopper/releases), then
+  `code --install-extension worktree-hopper-X.Y.Z.vsix`.
 
 ## What is tested
 
@@ -58,14 +58,14 @@ A release is a `vX.Y.Z` tag on `main`; nothing else publishes.
    higher than every earlier release, and it was not released before. After the tests pass, CI builds the `.vsix`,
    checks the version inside it too, and attaches it to a GitHub release.
 4. Upload that `.vsix` to the [Marketplace](https://marketplace.visualstudio.com/manage) (New extension → Visual
-   Studio Code, or Update) and to Open VSX (`npx ovsx publish worktree-switch-X.Y.Z.vsix -p <token>`).
+   Studio Code, or Update) and to Open VSX (`npx ovsx publish worktree-hopper-X.Y.Z.vsix -p <token>`).
 
 Tags `v*` cannot be moved or deleted, and `main` cannot be force-pushed or deleted (repository rulesets).
 
 ## Contributing
 
 This repository takes issues, but only its owner can push or open pull requests. Bug reports and ideas are welcome
-in [Issues](https://github.com/Niko412/worktree-switch/issues).
+in [Issues](https://github.com/Niko412/worktree-hopper/issues).
 
 ## License
 

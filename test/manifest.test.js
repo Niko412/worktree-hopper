@@ -11,7 +11,7 @@ const changelog = fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8');
 const declared = Object.keys(pkg.contributes.configuration.properties);
 
 test('every setting the code reads is declared', () => {
-  const used = [...source.matchAll(/\.get\('([A-Za-z]+)'\)/g)].map((m) => 'worktreeSwitch.' + m[1]);
+  const used = [...source.matchAll(/\.get\('([A-Za-z]+)'\)/g)].map((m) => 'worktreeHopper.' + m[1]);
   for (const s of new Set(used)) assert.ok(declared.includes(s), `${s} is read but not declared`);
 });
 
@@ -26,8 +26,8 @@ test('every declared command is registered', () => {
 });
 
 test('the view the code registers is declared in Source Control', () => {
-  assert.ok(pkg.contributes.views.scm.some((v) => v.id === 'worktreeSwitch.view' && v.type === 'webview'));
-  assert.ok(source.includes("registerWebviewViewProvider('worktreeSwitch.view'"));
+  assert.ok(pkg.contributes.views.scm.some((v) => v.id === 'worktreeHopper.view' && v.type === 'webview'));
+  assert.ok(source.includes("registerWebviewViewProvider('worktreeHopper.view'"));
 });
 
 test('the Marketplace fields are present', () => {

@@ -91,11 +91,11 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Build the .vsix
-        run: npx vsce package --readme-path MARKETPLACE.md --out worktree-switch-dev.vsix
+        run: npx vsce package --readme-path MARKETPLACE.md --out worktree-hopper-dev.vsix
       - uses: actions/upload-artifact@v4
         with:
-          name: worktree-switch-dev-vsix
-          path: worktree-switch-dev.vsix
+          name: worktree-hopper-dev-vsix
+          path: worktree-hopper-dev.vsix
           retention-days: 14
 
   release:
@@ -114,14 +114,14 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Build the .vsix
-        run: npx vsce package --readme-path MARKETPLACE.md --out "worktree-switch-${GITHUB_REF_NAME#v}.vsix"
+        run: npx vsce package --readme-path MARKETPLACE.md --out "worktree-hopper-${GITHUB_REF_NAME#v}.vsix"
       - name: Guard the .vsix
-        run: scripts/release-guard.sh vsix "$GITHUB_REF_NAME" "worktree-switch-${GITHUB_REF_NAME#v}.vsix"
+        run: scripts/release-guard.sh vsix "$GITHUB_REF_NAME" "worktree-hopper-${GITHUB_REF_NAME#v}.vsix"
       - uses: actions/upload-artifact@v4
         with:
-          name: worktree-switch-vsix
-          path: worktree-switch-*.vsix
+          name: worktree-hopper-vsix
+          path: worktree-hopper-*.vsix
       - name: Publish the GitHub release
         run: |
-          gh release create "$GITHUB_REF_NAME" "worktree-switch-${GITHUB_REF_NAME#v}.vsix" \
+          gh release create "$GITHUB_REF_NAME" "worktree-hopper-${GITHUB_REF_NAME#v}.vsix" \
             --title "$GITHUB_REF_NAME" --notes "$(awk '/^## /{n++} n==1' CHANGELOG.md | tail -n +2)"

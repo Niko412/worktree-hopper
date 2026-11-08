@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0
+
+- Renamed to **Worktree Hopper** (`NikolayChernuha.worktree-hopper`): "Worktree Switch" was taken on the Marketplace.
+  Settings and commands are now `worktreeHopper.*`; the repository is `Niko412/worktree-hopper`.
+
 ## 0.5.1
 
 - Published under the Marketplace publisher `NikolayChernuha` (the extension id is now

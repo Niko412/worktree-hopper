@@ -22,8 +22,8 @@ function makeRepo() {
   fs.writeFileSync(workspace, JSON.stringify({
     folders: [{ path: main }],
     settings: {
-      'worktreeSwitch.followInGit': false,
-      'worktreeSwitch.revealInGraph': false,
+      'worktreeHopper.followInGit': false,
+      'worktreeHopper.revealInGraph': false,
       'security.workspace.trust.enabled': false,
     },
   }));
