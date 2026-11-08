@@ -27,19 +27,29 @@ function makeRepo() {
       'security.workspace.trust.enabled': false,
     },
   }));
-  return { dir, workspace };
+  // A window whose first folder is not a repository (a plain folder), the repository second.
+  const plain = path.join(dir, 'notes');
+  fs.mkdirSync(plain);
+  const mixed = path.join(dir, 'mixed.code-workspace');
+  fs.writeFileSync(mixed, JSON.stringify({ folders: [{ path: plain }, { path: main }], settings: { 'security.workspace.trust.enabled': false } }));
+  return { dir, workspace, mixed };
 }
 
 async function main() {
-  const { dir, workspace } = makeRepo();
+  const { dir, workspace, mixed } = makeRepo();
+  const flags = ['--disable-extensions', '--disable-workspace-trust', '--skip-welcome', '--skip-release-notes'];
+  const run = (suite, target, extra = []) => runTests({
+    version: process.env.VSCODE_VERSION || 'stable',
+    extensionDevelopmentPath: path.join(__dirname, '..', '..'),
+    extensionTestsPath: path.join(__dirname, suite),
+    extensionTestsEnv: { WTS_ROOT: dir },
+    launchArgs: [...(target ? [target] : []), ...flags, ...extra],
+  });
   try {
-    await runTests({
-      version: process.env.VSCODE_VERSION || 'stable',
-      extensionDevelopmentPath: path.join(__dirname, '..', '..'),
-      extensionTestsPath: path.join(__dirname, 'suite.js'),
-      extensionTestsEnv: { WTS_ROOT: dir },
-      launchArgs: [workspace, '--disable-extensions', '--disable-workspace-trust', '--skip-welcome', '--skip-release-notes'],
-    });
+    await run('suite.js', workspace);
+    await run('startup.js', mixed);
+    // No folder at all: a new empty window.
+    await run('startup.js', null, ['--new-window']);
   } catch (e) {
     console.error('Integration tests failed:', e);
     process.exit(1);

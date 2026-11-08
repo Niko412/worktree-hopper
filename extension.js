@@ -9,11 +9,15 @@ const { parsePorcelain, removeRefusal, removeArgs, normalizePath } = require('./
 const realpath = (p) => { try { return fs.realpathSync.native(p); } catch (e) { return p; } };
 const norm = (p) => normalizePath(realpath(p), process.platform);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const firstLine = (t) => String(t || '').trim().split('\n')[0];
 
 function git(cwd, args) {
   return new Promise((resolve, reject) => {
-    cp.execFile('git', args, { cwd, maxBuffer: 4 * 1024 * 1024 }, (err, out, errOut) =>
-      err ? reject(new Error(errOut || err.message)) : resolve(out));
+    cp.execFile('git', args, { cwd, maxBuffer: 4 * 1024 * 1024 }, (err, out, errOut) => {
+      if (!err) return resolve(out);
+      if (err.code === 'ENOENT') return reject(new Error('git was not found on the PATH of this machine'));
+      return reject(new Error(errOut || err.message));
+    });
   });
 }
 
@@ -106,8 +110,9 @@ class WorktreeView {
   resolveWebviewView(view) {
     this.view = view;
     view.webview.options = { enableScripts: true };
-    view.webview.html = this.html(view.webview);
+    // Listen before the page loads: its 'ready' can come at once, and a message lost here leaves an empty list.
     view.webview.onDidReceiveMessage((msg) => this.onMessage(msg));
+    view.webview.html = this.html(view.webview);
     view.onDidChangeVisibility(() => view.visible && this.refresh());
     this.refresh().then(() => {
       const r = this.roots();
@@ -129,21 +134,42 @@ class WorktreeView {
     return { folders, anchor, slotIdx, active: slotIdx > 0 ? folders[slotIdx].uri.fsPath : anchor && anchor.uri.fsPath };
   }
 
+  // The repository to list: the active worktree first, then every workspace folder in order,
+  // so a window whose first folder is not a repository (or a parent of several) still works.
+  async findRepo() {
+    const { folders, active } = this.roots();
+    const candidates = [...new Set([active, ...folders.map((f) => f.uri.fsPath)].filter(Boolean))];
+    const failures = [];
+    for (const cwd of candidates) {
+      try {
+        const top = (await git(cwd, ['rev-parse', '--show-toplevel'])).trim();
+        const commonDir = path.resolve(top, (await git(cwd, ['rev-parse', '--git-common-dir'])).trim());
+        return { top, commonDir };
+      } catch (e) {
+        failures.push(`${cwd}: ${firstLine(e.message)}`);
+      }
+    }
+    return { failures, empty: candidates.length === 0 };
+  }
+
   async refresh() {
-    const { folders, active, anchor } = this.roots();
-    const cwd = active || (anchor && anchor.uri.fsPath);
-    if (!cwd) return this.post({ type: 'error', text: 'Open a folder inside a git repository.' });
+    const repo = await this.findRepo();
+    if (!repo.top) {
+      if (repo.empty) return this.post({ type: 'error', text: 'Open a folder inside a git repository.' });
+      for (const f of repo.failures) this.log('no repository: ' + f);
+      return this.post({ type: 'error', text: 'No git repository here. ' + repo.failures[0] });
+    }
+    const { top, commonDir } = repo;
     try {
-      const top = (await git(cwd, ['rev-parse', '--show-toplevel'])).trim();
-      const commonDir = path.resolve(top, (await git(cwd, ['rev-parse', '--git-common-dir'])).trim());
       let items = parsePorcelain(await git(top, ['worktree', 'list', '--porcelain']));
       this.paths = new Set(items.map((i) => norm(i.path)));
       const r = this.roots();
       if (vscode.workspace.getConfiguration('worktreeHopper').get('hidePrunable')) items = items.filter((i) => !i.prunable);
       const main = items[0] && items[0].path;
-      const open = new Set(folders.map((f) => norm(f.uri.fsPath)));
+      const open = new Set(r.folders.map((f) => norm(f.uri.fsPath)));
+      const activeRoot = r.slotIdx > 0 ? r.active : top;
       for (const i of items) {
-        i.current = norm(i.path) === norm(r.active || top);
+        i.current = norm(i.path) === norm(activeRoot);
         i.open = !i.current && open.has(norm(i.path));
         i.main = i.path === main;
         i.name = path.basename(i.path);
@@ -153,7 +179,8 @@ class WorktreeView {
       this.watch(commonDir);
       this.post({ type: 'list', items, openIn: vscode.workspace.getConfiguration('worktreeHopper').get('openIn') });
     } catch (e) {
-      this.post({ type: 'error', text: 'Not a git repository: ' + cwd });
+      this.log('git worktree list failed: ' + e.message.trim());
+      this.post({ type: 'error', text: 'git worktree list failed: ' + firstLine(e.message) });
     }
   }
 
@@ -201,7 +228,11 @@ class WorktreeView {
   }
 
   async onMessage(msg) {
-    if (msg.type === 'ready') return this.refresh();
+    if (msg.type === 'ready') {
+      this.pageReady = true;
+      if (this.lastState) this.view.webview.postMessage(this.lastState);
+      return this.refresh();
+    }
     if (msg.type === 'refresh') return this.refresh();
     if (msg.type === 'open') {
       if (!fs.existsSync(msg.path)) {
@@ -290,7 +321,11 @@ class WorktreeView {
 
   focusSearch() { this.post({ type: 'focus' }); }
 
-  post(m) { if (this.view) this.view.webview.postMessage(m); }
+  // Keeps the last list or error, so a page that loads later (or reloads) gets it on 'ready'.
+  post(m) {
+    if (m.type === 'list' || m.type === 'error') this.lastState = m;
+    if (this.view) this.view.webview.postMessage(m);
+  }
 
   html(webview) {
     const nonce = Math.random().toString(36).slice(2);
@@ -312,6 +347,18 @@ class WorktreeView {
   }
 }
 
+// The pre-1.0 builds were "Worktree Switch" (another id); both installed means two Worktrees panels.
+async function warnAboutOldExtension() {
+  const old = ['NikolayChernuha.worktree-switch', 'niko412.worktree-switch', 'centralad.worktree-switch']
+    .find((id) => vscode.extensions.getExtension(id));
+  if (!old) return;
+  const choice = await vscode.window.showWarningMessage(
+    `Worktree Hopper replaces ${old} (Worktree Switch). With both installed there are two Worktrees panels.`,
+    'Uninstall the old one',
+  );
+  if (choice) await vscode.commands.executeCommand('workbench.extensions.uninstallExtension', old);
+}
+
 function activate(context) {
   const provider = new WorktreeView(context);
   context.subscriptions.push(
@@ -326,6 +373,7 @@ function activate(context) {
     { dispose: () => provider.watchers.forEach((w) => w.dispose()) },
   );
   provider.refresh();
+  warnAboutOldExtension();
   return { provider }; // used by the integration tests
 }
 
