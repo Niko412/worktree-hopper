@@ -6,6 +6,7 @@ const fs = require('fs');
 const { parsePorcelain, removeRefusal, removeArgs, normalizePath } = require('./lib/worktrees');
 
 const norm = (p) => normalizePath(p, process.platform);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function git(cwd, args) {
   return new Promise((resolve, reject) => {
@@ -53,7 +54,6 @@ async function followInGit(oldRoot, newRoot) {
 // Scroll the Source Control Graph to the active repository's HEAD (the ◎ "Go to Current History Item" button).
 // The Graph loads the new repository a moment after git opens it, so wait for git's HEAD, then reveal a few times.
 const REVEAL = 'workbench.scm.action.graph.revealCurrentHistoryItem';
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let revealRun = 0;
 async function revealGraphHead(root, log) {
   const run = ++revealRun;
@@ -72,6 +72,26 @@ async function revealGraphHead(root, log) {
     try { await vscode.commands.executeCommand(REVEAL); } catch (e) { log('reveal failed: ' + e.message); }
   }
   log('revealed ' + root);
+}
+
+// updateWorkspaceFolders refuses (returns false) while VS Code is still confirming the previous change.
+// Retry until it is accepted, then wait for the change to land.
+async function updateFolders(start, deleteCount, ...add) {
+  for (let t = 0; t < 50; t++) {
+    let sub;
+    const landed = new Promise((resolve) => {
+      sub = vscode.workspace.onDidChangeWorkspaceFolders(() => resolve(true));
+      setTimeout(() => resolve(false), 5000);
+    });
+    if (vscode.workspace.updateWorkspaceFolders(start, deleteCount, ...add)) {
+      const ok = await landed;
+      sub.dispose();
+      return ok;
+    }
+    sub.dispose();
+    await sleep(100);
+  }
+  return false;
 }
 
 class WorktreeView {
@@ -149,9 +169,15 @@ class WorktreeView {
       vscode.workspace.updateWorkspaceFolders(folders.length, 0, { uri: vscode.Uri.file(target), name });
       return;
     }
-    if (toAnchor) vscode.workspace.updateWorkspaceFolders(slotIdx, 1);
-    else if (slotIdx > 0) vscode.workspace.updateWorkspaceFolders(slotIdx, 1, { uri: vscode.Uri.file(target), name });
-    else vscode.workspace.updateWorkspaceFolders(folders.length, 0, { uri: vscode.Uri.file(target), name });
+    let ok;
+    if (toAnchor) ok = await updateFolders(slotIdx, 1);
+    else if (slotIdx > 0) ok = await updateFolders(slotIdx, 1, { uri: vscode.Uri.file(target), name });
+    else ok = await updateFolders(folders.length, 0, { uri: vscode.Uri.file(target), name });
+    if (!ok) {
+      this.log(`switch to ${name} was not accepted by VS Code`);
+      vscode.window.showWarningMessage(`Could not switch to ${name}. Try again.`);
+      return;
+    }
     await Promise.all([
       cfg.get('moveEditors') ? moveEditors(active, target) : null,
       cfg.get('followInGit') ? followInGit(active, target).catch((e) => this.log('git: ' + e.message)) : null,

@@ -30,7 +30,7 @@ Every push and pull request runs, on GitHub's hosted runners:
 
 | Suite | Where | What |
 |---|---|---|
-| Unit | Node 20 | Parsing `git worktree list`, search and regex, why git refused a delete, Windows paths, the manifest against the code and the README, the release guard |
+| Unit | Node 22 | Parsing `git worktree list`, search and regex, why git refused a delete, Windows paths, the manifest against the code and the README, the release guard |
 | Integration | VS Code **1.85.0** (the minimum) and **stable**, on **Linux, Windows and macOS** | A real VS Code on a throwaway repository with worktrees: switch in place, editors moving, switching back, unsaved editors staying, delete refused, cancelled, asked twice for changes, and done |
 
 The `.vsix` is built only after every test passes.
