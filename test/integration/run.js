@@ -22,6 +22,7 @@ function makeRepo() {
   fs.writeFileSync(workspace, JSON.stringify({
     folders: [{ path: main }],
     settings: {
+      'worktreeHopper.switchMode': 'twoRoots', // single restarts the extension host, which ends the test run
       'worktreeHopper.followInGit': false,
       'worktreeHopper.revealInGraph': false,
       'security.workspace.trust.enabled': false,

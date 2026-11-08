@@ -4,6 +4,7 @@ const cp = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { parsePorcelain, removeRefusal, removeArgs, normalizePath } = require('./lib/worktrees');
+const { planSwitch } = require('./lib/plan');
 
 // Real path first (symlinks, Windows short names like RUNNER~1), then one comparable form.
 const realpath = (p) => { try { return fs.realpathSync.native(p); } catch (e) { return p; } };
@@ -184,25 +185,38 @@ class WorktreeView {
     }
   }
 
-  async hotSwitch(target) {
-    const { folders, anchor, slotIdx, active } = this.roots();
-    if (!anchor) return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(target), { forceReuseWindow: true });
-    if (active && norm(active) === norm(target)) return;
-    const name = path.basename(target);
+  // Switches this window to `target` as planSwitch (lib/plan.js) decides for the current mode.
+  async switchTo(target) {
     const cfg = vscode.workspace.getConfiguration('worktreeHopper');
-    const toAnchor = norm(target) === norm(anchor.uri.fsPath);
-    if (!toAnchor && slotIdx < 0 && !vscode.workspace.workspaceFile) {
-      // First switch: the window turns multi-root and this extension restarts, so move editors before that.
+    const { folders, slotIdx, active } = this.roots();
+    const plan = planSwitch({
+      mode: cfg.get('switchMode'),
+      folders: folders.map((f) => f.uri.fsPath),
+      slotIdx,
+      target,
+      same: (a, b) => norm(a) === norm(b),
+      hasWorkspaceFile: !!vscode.workspace.workspaceFile,
+    });
+    const name = path.basename(target);
+    const add = plan.add ? [{ uri: vscode.Uri.file(plan.add), name: path.basename(plan.add) }] : [];
+    this.log(`switch to ${name}: ${JSON.stringify(plan)}`);
+
+    if (plan.op === 'none') return;
+    if (plan.op === 'open') {
+      return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(target), { forceReuseWindow: true });
+    }
+    if (plan.restarts) {
+      // VS Code restarts the extensions (this one too) when the change lands, so move the editors first
+      // and hand the change over without waiting for it.
       if (cfg.get('moveEditors')) await moveEditors(active, target);
-      vscode.window.setStatusBarMessage('Worktree Hopper: window becomes multi-root once; later switches are instant', 5000);
-      vscode.workspace.updateWorkspaceFolders(folders.length, 0, { uri: vscode.Uri.file(target), name });
+      vscode.window.setStatusBarMessage(`Switching to ${name}…`, 5000);
+      if (!vscode.workspace.updateWorkspaceFolders(plan.start, plan.deleteCount, ...add)) {
+        // A change VS Code is still confirming: fall back to reopening the window on the worktree.
+        await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(target), { forceReuseWindow: true });
+      }
       return;
     }
-    let ok;
-    if (toAnchor) ok = await updateFolders(slotIdx, 1);
-    else if (slotIdx > 0) ok = await updateFolders(slotIdx, 1, { uri: vscode.Uri.file(target), name });
-    else ok = await updateFolders(folders.length, 0, { uri: vscode.Uri.file(target), name });
-    if (!ok) {
+    if (!(await updateFolders(plan.start, plan.deleteCount, ...add))) {
       this.log(`switch to ${name} was not accepted by VS Code`);
       vscode.window.showWarningMessage(`Could not switch to ${name}. Try again.`);
       return;
@@ -214,6 +228,9 @@ class WorktreeView {
     if (cfg.get('revealInGraph')) revealGraphHead(target, (m) => this.log(m));
     vscode.window.setStatusBarMessage('Switched to ' + name, 2000);
   }
+
+  // The 1.0.0 entry point, kept for the integration tests (they run in twoRoots mode).
+  hotSwitch(target) { return this.switchTo(target); }
 
   watch(commonDir) {
     if (this.watchedDir === commonDir) return;
@@ -240,8 +257,7 @@ class WorktreeView {
         return;
       }
       if (msg.newWindow) return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), { forceNewWindow: true });
-      if (vscode.workspace.getConfiguration('worktreeHopper').get('switchMode') === 'hot') return this.hotSwitch(msg.path);
-      return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), { forceReuseWindow: true });
+      return this.switchTo(msg.path);
     }
     if (msg.type === 'delete') return this.deleteWorktree(msg.path);
     if (msg.type === 'copy') {

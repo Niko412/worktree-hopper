@@ -10,7 +10,8 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 A VS Code extension: a **Worktrees** panel in the Source Control view. Search git worktrees by text or regex and
-switch to one in place, without reloading the window. Open files, Changes and the Graph follow the switch.
+switch to one in place, without reloading the window: the window then holds that worktree like a normal repository,
+and open files follow.
 
 ![The Worktrees panel in Source Control](images/screenshot.png)
 
