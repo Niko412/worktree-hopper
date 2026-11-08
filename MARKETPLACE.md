@@ -1,41 +1,61 @@
 # Worktree Switch
 
-A **Worktrees** panel inside VS Code's Source Control view. Find a git worktree by typing part of its name, branch or
-path, and switch to it in place, without reloading the window.
+[![Build](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml/badge.svg)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/niko412.worktree-switch?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=niko412.worktree-switch)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/niko412.worktree-switch)](https://marketplace.visualstudio.com/items?itemName=niko412.worktree-switch)
+[![Open VSX](https://img.shields.io/open-vsx/v/niko412/worktree-switch?label=Open%20VSX)](https://open-vsx.org/extension/niko412/worktree-switch)
+[![Tested on VS Code](https://img.shields.io/badge/tested%20on%20VS%20Code-1.85%20%7C%20stable-007ACC)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
+[![Tested on](https://img.shields.io/badge/tested%20on-Linux%20%7C%20Windows%20%7C%20macOS-555)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/Niko412/worktree-switch/blob/main/LICENSE)
 
-If you keep many worktrees side by side (one per task or pull request), opening the right one usually means a trip
-through *File → Open Folder* or a new window. This panel lists them all under Changes and the Graph, so switching is
-one click.
+**Switch git worktrees from the Source Control view, in place, without reloading the window.**
+
+A **Worktrees** panel sits under Changes and the Graph. Type a few letters of a folder, branch or path, press Enter,
+and the window is on that worktree, with your open files, the Graph and Changes following along.
+
+![The Worktrees panel in Source Control](https://raw.githubusercontent.com/Niko412/worktree-switch/main/images/screenshot.png)
+
+## Why
+
+If you keep a worktree per task or pull request, getting to the right one means *File → Open Folder*, a full
+reload, and losing your terminals and chat. With Worktree Switch it is one click, and nothing restarts.
 
 ## Features
 
-- **Lists every worktree** of the current repository, from `git worktree list`: folder name, branch (or detached
-  commit), and tags for `main`, `open`, `gone` (folder deleted) and `locked`. The active one is marked with ●.
-- **Search** by folder name, branch or path. Matches are highlighted. Toggle regular expressions with the `.*`
-  button or **Alt+R**; an invalid expression turns the box red.
-- **Keyboard first**: **Ctrl+Alt+W** (**Cmd+Alt+W** on macOS) jumps to the search box, ↑/↓ move, **Enter** switches,
-  **Alt+Enter** opens in a new window, **Esc** clears.
-- **Hot switch, no reload.** The active worktree is swapped in as a second workspace folder, so extensions,
-  terminals and chat panels keep running.
-- **Your editors come along.** Each open file reopens at the same path in the new worktree. Files with unsaved
-  changes stay where they are.
-- **Source Control follows.** The previous worktree's repository is closed in Source Control, so Changes and the
-  Graph show only the active worktree, and the Graph scrolls to its current commit.
-- **New window when you want one**: Alt+click a row, or use its ⧉ button. ⎘ copies the path.
-- **Stays current**: the list refreshes when worktrees are added or removed.
+- **Every worktree, in Source Control.** Folder, branch (or detached commit), and tags for `main`, `open`, `gone`
+  and `locked`. ● marks the active one.
+- **Search by text or regex.** Name, branch or path, with matches highlighted. **Alt+R** or `.*` toggles regular
+  expressions.
+- **Hot switch.** No reload: extensions, terminals and chat panels keep running.
+- **Your editors come along.** Open files reopen at the same path in the new worktree; unsaved ones stay put.
+- **Source Control follows.** Changes and the Graph show the active worktree, scrolled to its current commit.
+- **Delete with a confirmation.** 🗑 (or the Delete key) asks Yes/Cancel. Uncommitted changes or a lock ask a
+  second time. The branch is kept.
+- **New window when you want one.** Alt+click, or ⧉ on the row.
+
+## Keyboard
+
+| Key | Action |
+|---|---|
+| **Ctrl+Alt+W** (**Cmd+Alt+W**) | Jump to the search box |
+| ↑ / ↓ | Move through the list |
+| **Enter** | Switch in this window |
+| **Alt+Enter** | Open in a new window |
+| **Delete** | Delete the selected worktree (asks first) |
+| **Alt+R** | Toggle regular expressions |
+| **Esc** | Clear the search |
 
 ## How the hot switch works
 
-VS Code restarts every extension when the *first* folder of a window changes, but not when a later folder does.
-So the window keeps the folder you opened as a fixed first folder and swaps the active worktree in a second slot:
+VS Code restarts every extension when the *first* folder of a window changes, and not when a later one does. So
+the folder you opened stays first, and the active worktree is swapped in as a second folder:
 
-- The **first** switch turns the window into a multi-root workspace. Extensions restart once (the window does not
+- The **first** switch turns the window into a multi-root workspace (extensions restart once; the window does not
   reload).
 - **Every switch after that is instant.**
-- Switching back to the first folder removes the slot.
+- Switching back to the first folder removes the second one.
 
-Prefer a plain single-folder window? Set `worktreeSwitch.switchMode` to `reload` and each switch reopens the window
-on the worktree instead.
+Prefer one folder per window? Set `worktreeSwitch.switchMode` to `reload`.
 
 ## Settings
 
@@ -50,20 +70,16 @@ on the worktree instead.
 
 ## Tips
 
-- The panel appears at the bottom of Source Control. Drag its header to put it between Changes and the Graph;
-  VS Code remembers the spot.
-- VS Code asks whether you trust each worktree folder the first time it is added. Add their parent folder under
-  **Workspaces: Manage Workspace Trust** to skip the prompt.
-- Terminals already open stay in their folder; new ones start in the active worktree.
-- When you close a hot-switched window, VS Code offers to save it as a workspace. Saving keeps the setup.
-- Worktrees marked `gone` can be cleaned up with `git worktree prune`.
+- Drag the **Worktrees** header between Changes and the Graph; VS Code remembers where you put it.
+- VS Code asks whether to trust each new worktree folder. Trust their parent folder once (**Workspaces: Manage
+  Workspace Trust**) to skip that.
+- Terminals already open stay where they were; new ones start in the active worktree.
 
 ## Requirements
 
-- VS Code 1.85 or newer (or a compatible editor such as Cursor or VSCodium).
-- `git` on the `PATH` of the machine where the workspace lives. It works in Remote SSH, WSL and containers, where
-  it runs next to the repository.
+- VS Code 1.85 or newer, or a compatible editor (Cursor, VSCodium, Windsurf).
+- `git` on the machine where the workspace lives. Works locally and over Remote SSH, WSL and Dev Containers.
 
-## License
+## Feedback
 
-[MIT](LICENSE)
+Found a bug or have an idea? [Open an issue](https://github.com/Niko412/worktree-switch/issues).

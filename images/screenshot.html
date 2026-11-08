@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+:root{--vscode-foreground:#cccccc;--vscode-font-family:"Segoe UI",system-ui,sans-serif;--vscode-font-size:13px;--vscode-input-background:#313131;--vscode-input-foreground:#cccccc;--vscode-input-border:#3c3c3c;--vscode-focusBorder:#0078d4;--vscode-input-placeholderForeground:#989898;--vscode-inputOption-activeBackground:#2489db82;--vscode-inputOption-activeBorder:#2488db;--vscode-inputOption-activeForeground:#fff;--vscode-list-hoverBackground:#2a2d2e;--vscode-list-activeSelectionBackground:#04395e;--vscode-list-activeSelectionForeground:#fff;--vscode-gitDecoration-addedResourceForeground:#81b88b;--vscode-badge-background:#616161;--vscode-badge-foreground:#f8f8f8;--vscode-editor-findMatchHighlightBackground:#9e6a03aa;--vscode-editor-font-family:monospace}
+html,body{margin:0;padding:0 !important;background:#181818}
+.frame{width:400px;overflow:hidden;background:#181818;font-family:var(--vscode-font-family);color:#ccc;font-size:13px}
+.hdr{padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#bbb}
+.sec{display:flex;align-items:center;gap:4px;padding:3px 8px;font-size:11px;font-weight:700;text-transform:uppercase;border-top:1px solid #2b2b2b}
+.sec span{opacity:.8}
+.graph{padding:2px 20px 6px;font-size:13px;line-height:22px;color:#ccc}
+.graph div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.graph i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3794ff;margin-right:8px}
+.b{font-size:11px;padding:0 6px;border-radius:8px;background:#3794ff;color:#fff;margin-left:6px}
+</style><link rel="stylesheet" href="../media/view.css"></head><body><div class="frame">
+<div class="hdr">Source Control</div>
+<div class="sec"><span>⌄</span> Graph</div>
+<div class="graph">
+<div><i></i>Add hot switching <span class="b">feature/hot-switch</span></div>
+<div><i></i>Move editors to the new worktree</div>
+<div><i></i>Search worktrees by regex</div>
+</div>
+<div class="sec"><span>⌄</span> Worktrees</div>
+<div style="padding:0 10px 10px 20px">
+<div class="search"><input id="q" class="" value="feat" spellcheck="false"><button class="toggle" aria-pressed="false">.*</button></div>
+<div class="count">4 of 7</div>
+<ul>
+<li class="cur"><span class="dot">●</span><span class="name">app-hot</span><span class="branch"><mark>feat</mark>ure/hot-switch</span></li>
+<li class="sel"><span class="dot"></span><span class="name">app-search</span><span class="branch"><mark>feat</mark>ure/regex-search</span><button class="act" style="visibility:visible">↪</button><button class="act" style="visibility:visible">⧉</button><button class="act" style="visibility:visible">⎘</button><button class="act" style="visibility:visible">🗑</button></li>
+<li><span class="dot"></span><span class="name">app-editors</span><span class="branch"><mark>feat</mark>ure/move-editors</span></li>
+<li class="gone"><span class="dot"></span><span class="name">app-old</span><span class="branch"><mark>feat</mark>ure/first-try</span><span class="tag">gone</span></li>
+</ul></div></div></body></html>

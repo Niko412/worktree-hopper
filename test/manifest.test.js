@@ -6,7 +6,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const source = fs.readFileSync(path.join(root, 'extension.js'), 'utf8');
-const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+const readme = fs.readFileSync(path.join(root, 'MARKETPLACE.md'), 'utf8');
 const changelog = fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8');
 const declared = Object.keys(pkg.contributes.configuration.properties);
 
@@ -15,8 +15,8 @@ test('every setting the code reads is declared', () => {
   for (const s of new Set(used)) assert.ok(declared.includes(s), `${s} is read but not declared`);
 });
 
-test('every declared setting is documented in the README', () => {
-  for (const s of declared) assert.ok(readme.includes('`' + s + '`'), `${s} is missing from README.md`);
+test('every declared setting is documented in the Marketplace README', () => {
+  for (const s of declared) assert.ok(readme.includes('`' + s + '`'), `${s} is missing from MARKETPLACE.md`);
 });
 
 test('every declared command is registered', () => {

@@ -1,8 +1,11 @@
 .github/**
 .gitignore
-*.vsix
+images/**
+images/screenshot.html
 node_modules/**
+package-lock.json
 scripts/**
 test/**
-package-lock.json
 .vscode-test/**
+*.vsix
+README.md

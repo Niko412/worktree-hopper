@@ -1,68 +1,71 @@
 # Worktree Switch
 
-A **Worktrees** panel inside VS Code's Source Control view. Find a git worktree by typing part of its name, branch or
-path, and switch to it in place, without reloading the window.
+[![Build](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml/badge.svg)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/niko412.worktree-switch?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=niko412.worktree-switch)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/niko412.worktree-switch)](https://marketplace.visualstudio.com/items?itemName=niko412.worktree-switch)
+[![Open VSX](https://img.shields.io/open-vsx/v/niko412/worktree-switch?label=Open%20VSX)](https://open-vsx.org/extension/niko412/worktree-switch)
+[![GitHub release](https://img.shields.io/github/v/release/Niko412/worktree-switch)](https://github.com/Niko412/worktree-switch/releases)
+[![Tested on VS Code](https://img.shields.io/badge/tested%20on%20VS%20Code-1.85%20%7C%20stable-007ACC)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
+[![Tested on](https://img.shields.io/badge/tested%20on-Linux%20%7C%20Windows%20%7C%20macOS-555)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-If you keep many worktrees side by side (one per task or pull request), opening the right one usually means a trip
-through *File → Open Folder* or a new window. This panel lists them all under Changes and the Graph, so switching is
-one click.
+A VS Code extension: a **Worktrees** panel in the Source Control view. Search git worktrees by text or regex and
+switch to one in place, without reloading the window. Open files, Changes and the Graph follow the switch.
 
-## Features
+![The Worktrees panel in Source Control](images/screenshot.png)
 
-- **Lists every worktree** of the current repository, from `git worktree list`: folder name, branch (or detached
-  commit), and tags for `main`, `open`, `gone` (folder deleted) and `locked`. The active one is marked with ●.
-- **Search** by folder name, branch or path. Matches are highlighted. Toggle regular expressions with the `.*`
-  button or **Alt+R**; an invalid expression turns the box red.
-- **Keyboard first**: **Ctrl+Alt+W** (**Cmd+Alt+W** on macOS) jumps to the search box, ↑/↓ move, **Enter** switches,
-  **Alt+Enter** opens in a new window, **Esc** clears.
-- **Hot switch, no reload.** The active worktree is swapped in as a second workspace folder, so extensions,
-  terminals and chat panels keep running.
-- **Your editors come along.** Each open file reopens at the same path in the new worktree. Files with unsaved
-  changes stay where they are.
-- **Source Control follows.** The previous worktree's repository is closed in Source Control, so Changes and the
-  Graph show only the active worktree, and the Graph scrolls to its current commit.
-- **New window when you want one**: Alt+click a row, or use its ⧉ button. ⎘ copies the path.
-- **Stays current**: the list refreshes when worktrees are added or removed.
+The Marketplace listing, with every feature, key and setting, is [MARKETPLACE.md](MARKETPLACE.md).
 
-## How the hot switch works
+## Install
 
-VS Code restarts every extension when the *first* folder of a window changes, but not when a later folder does.
-So the window keeps the folder you opened as a fixed first folder and swaps the active worktree in a second slot:
+- **VS Code:** search *Worktree Switch* in the Extensions view, or
+  [install from the Marketplace](https://marketplace.visualstudio.com/items?itemName=niko412.worktree-switch).
+- **Cursor, VSCodium, Windsurf:** install from [Open VSX](https://open-vsx.org/extension/niko412/worktree-switch).
+- **By hand:** download the `.vsix` from [Releases](https://github.com/Niko412/worktree-switch/releases), then
+  `code --install-extension worktree-switch-X.Y.Z.vsix`.
 
-- The **first** switch turns the window into a multi-root workspace. Extensions restart once (the window does not
-  reload).
-- **Every switch after that is instant.**
-- Switching back to the first folder removes the slot.
+## What is tested
 
-Prefer a plain single-folder window? Set `worktreeSwitch.switchMode` to `reload` and each switch reopens the window
-on the worktree instead.
+Every push and pull request runs, on GitHub's hosted runners:
 
-## Settings
-
-| Setting | Default | What it does |
+| Suite | Where | What |
 |---|---|---|
-| `worktreeSwitch.switchMode` | `hot` | `hot` swaps the worktree in place; `reload` reopens the window on it. |
-| `worktreeSwitch.openIn` | `sameWindow` | Where a plain click opens. Alt+click does the other. |
-| `worktreeSwitch.moveEditors` | `true` | On a hot switch, reopen open editors in the new worktree. |
-| `worktreeSwitch.followInGit` | `true` | On a hot switch, show only the active worktree in Source Control. |
-| `worktreeSwitch.revealInGraph` | `true` | After a hot switch, scroll the Graph to the worktree's current commit. |
-| `worktreeSwitch.hidePrunable` | `false` | Hide worktrees whose folder is gone. |
+| Unit | Node 20 | Parsing `git worktree list`, search and regex, why git refused a delete, Windows paths, the manifest against the code and the README, the release guard |
+| Integration | VS Code **1.85.0** (the minimum) and **stable**, on **Linux, Windows and macOS** | A real VS Code on a throwaway repository with worktrees: switch in place, editors moving, switching back, unsaved editors staying, delete refused, cancelled, asked twice for changes, and done |
 
-## Tips
+The `.vsix` is built only after every test passes.
 
-- The panel appears at the bottom of Source Control. Drag its header to put it between Changes and the Graph;
-  VS Code remembers the spot.
-- VS Code asks whether you trust each worktree folder the first time it is added. Add their parent folder under
-  **Workspaces: Manage Workspace Trust** to skip the prompt.
-- Terminals already open stay in their folder; new ones start in the active worktree.
-- When you close a hot-switched window, VS Code offers to save it as a workspace. Saving keeps the setup.
-- Worktrees marked `gone` can be cleaned up with `git worktree prune`.
+## Development
 
-## Requirements
+```sh
+npm ci
+npm test                    # unit tests
+npm run test:integration    # downloads VS Code and runs the integration tests (needs a display; xvfb-run on Linux)
+npx vsce package --readme-path MARKETPLACE.md
+```
 
-- VS Code 1.85 or newer (or a compatible editor such as Cursor or VSCodium).
-- `git` on the `PATH` of the machine where the workspace lives. It works in Remote SSH, WSL and containers, where
-  it runs next to the repository.
+The code: [extension.js](extension.js) (the extension host side), [media/](media/) (the panel's webview),
+[lib/worktrees.js](lib/worktrees.js) (pure helpers), [test/](test/).
+
+## Releasing
+
+A release is a `vX.Y.Z` tag on `main`; nothing else publishes.
+
+1. In an ordinary commit, bump `version` in `package.json` and add a `## X.Y.Z` entry at the top of `CHANGELOG.md`.
+2. Run `scripts/release.sh`. It tags `origin/main` at the version `package.json` writes, and pushes the tag.
+3. CI's release guard ([scripts/release-guard.sh](scripts/release-guard.sh)) refuses the tag unless it is
+   `vX.Y.Z`, `package.json` and the newest `CHANGELOG.md` entry carry that version, its commit is on `main`, it is
+   higher than every earlier release, and it was not released before. After the tests pass, CI builds the `.vsix`,
+   checks the version inside it too, and attaches it to a GitHub release.
+4. Upload that `.vsix` to the [Marketplace](https://marketplace.visualstudio.com/manage) (New extension → Visual
+   Studio Code, or Update) and to Open VSX (`npx ovsx publish worktree-switch-X.Y.Z.vsix -p <token>`).
+
+Tags `v*` cannot be moved or deleted, and `main` cannot be force-pushed or deleted (repository rulesets).
+
+## Contributing
+
+This repository takes issues, but only its owner can push or open pull requests. Bug reports and ideas are welcome
+in [Issues](https://github.com/Niko412/worktree-switch/issues).
 
 ## License
 
