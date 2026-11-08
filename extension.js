@@ -238,7 +238,7 @@ class WorktreeView {
     if (!(await this.ask(`Delete worktree ${item.name}?`, `${where} ${branch}`))) return false;
     const cwd = this.repoTop;
     try {
-      await git(cwd, removeArgs(item.path, null));
+      await this.removeWorktree(cwd, item, null);
     } catch (e) {
       const refusal = removeRefusal(e.message);
       if (!refusal) { vscode.window.showErrorMessage(`Could not delete ${item.name}: ${e.message.trim()}`); return false; }
@@ -247,7 +247,7 @@ class WorktreeView {
         : `${item.name} has uncommitted or untracked changes. They will be lost.`;
       if (!(await this.ask(`${why} Delete it anyway?`, `This deletes the folder ${item.path}. ${branch}`))) return false;
       try {
-        await git(cwd, removeArgs(item.path, refusal));
+        await this.removeWorktree(cwd, item, refusal);
       } catch (e2) {
         vscode.window.showErrorMessage(`Could not delete ${item.name}: ${e2.message.trim()}`);
         return false;
@@ -256,6 +256,31 @@ class WorktreeView {
     vscode.window.setStatusBarMessage(`Deleted worktree ${item.name}`, 3000);
     await this.refresh();
     return true;
+  }
+
+  // git worktree remove, retried: on Windows a file watcher can hold the folder for a moment.
+  // A refusal that needs the user's answer (changes, lock) is thrown at once. If git has already
+  // let go of the worktree but its folder is still there, the folder is removed here.
+  async removeWorktree(cwd, item, refusal) {
+    let last;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      try {
+        await git(cwd, removeArgs(item.path, refusal));
+        return;
+      } catch (e) {
+        last = e;
+        this.log(`remove ${item.name} (attempt ${attempt + 1}): ${e.message.trim()}`);
+        if (!refusal && removeRefusal(e.message)) throw e;
+        const listed = parsePorcelain(await git(cwd, ['worktree', 'list', '--porcelain']))
+          .some((i) => norm(i.path) === norm(item.path));
+        if (!listed) {
+          fs.rmSync(item.path, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+          return;
+        }
+        await sleep(400);
+      }
+    }
+    throw last;
   }
 
   log(m) {

@@ -4,6 +4,8 @@
 
 - Renamed to **Worktree Hopper** (`NikolayChernuha.worktree-hopper`): "Worktree Switch" was taken on the Marketplace.
   Settings and commands are now `worktreeHopper.*`; the repository is `Niko412/worktree-hopper`.
+- Deleting a worktree on Windows retries while a file watcher holds the folder, and finishes removing the
+  folder if git has already let go of it.
 
 ## 0.5.1
 
