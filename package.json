@@ -2,7 +2,7 @@
   "name": "worktree-switch",
   "displayName": "Worktree Switch",
   "description": "A Worktrees panel in Source Control: search by text or regex and switch git worktrees in place, without reloading the window.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "niko412",
   "author": {
     "name": "Nikolay Chernuha"
@@ -130,5 +130,14 @@
         }
       }
     }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:integration": "node test/integration/run.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.2.1"
   }
 }

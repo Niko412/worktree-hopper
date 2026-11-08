@@ -3,6 +3,9 @@ const vscode = require('vscode');
 const cp = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { parsePorcelain, removeRefusal, removeArgs, normalizePath } = require('./lib/worktrees');
+
+const norm = (p) => normalizePath(p, process.platform);
 
 function git(cwd, args) {
   return new Promise((resolve, reject) => {
@@ -11,37 +14,20 @@ function git(cwd, args) {
   });
 }
 
-function parsePorcelain(text) {
-  const items = [];
-  let cur = null;
-  for (const line of text.split('\n')) {
-    if (line.startsWith('worktree ')) {
-      cur = { path: line.slice(9), branch: '', head: '', detached: false, bare: false, prunable: false, locked: false };
-      items.push(cur);
-    } else if (!cur) {
-      continue;
-    } else if (line.startsWith('HEAD ')) cur.head = line.slice(5, 13);
-    else if (line.startsWith('branch ')) cur.branch = line.slice(7).replace(/^refs\/heads\//, '');
-    else if (line === 'detached') cur.detached = true;
-    else if (line === 'bare') cur.bare = true;
-    else if (line.startsWith('prunable')) cur.prunable = true;
-    else if (line.startsWith('locked')) cur.locked = true;
-  }
-  return items;
-}
 
 // Reopen each clean editor under oldRoot at the same relative path under newRoot; close the old tabs in one go.
 async function moveEditors(oldRoot, newRoot) {
   if (!oldRoot) return;
-  const prefix = path.resolve(oldRoot) + path.sep;
+  const prefix = norm(oldRoot) + path.sep;
+  const prefixLength = path.resolve(oldRoot).length + 1;
   const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
   const moves = [];
   for (const group of vscode.window.tabGroups.all) {
     for (const tab of group.tabs) {
       if (!(tab.input instanceof vscode.TabInputText) || tab.isDirty || tab.input.uri.scheme !== 'file') continue;
       const p = tab.input.uri.fsPath;
-      if (!p.startsWith(prefix)) continue;
-      const moved = path.join(newRoot, p.slice(prefix.length));
+      if (!norm(p).startsWith(prefix)) continue;
+      const moved = path.join(newRoot, path.resolve(p).slice(prefixLength));
       if (fs.existsSync(moved)) moves.push({ tab, uri: vscode.Uri.file(moved), col: group.viewColumn });
     }
   }
@@ -59,7 +45,7 @@ async function followInGit(oldRoot, newRoot) {
   const api = (ext.isActive ? ext.exports : await ext.activate()).getAPI(1);
   const target = vscode.Uri.file(newRoot);
   if (!api.getRepository(target)) await api.openRepository(target);
-  if (oldRoot && path.resolve(oldRoot) !== path.resolve(newRoot) && api.getRepository(vscode.Uri.file(oldRoot))) {
+  if (oldRoot && norm(oldRoot) !== norm(newRoot) && api.getRepository(vscode.Uri.file(oldRoot))) {
     await vscode.commands.executeCommand('git.close', vscode.Uri.file(oldRoot));
   }
 }
@@ -117,12 +103,11 @@ class WorktreeView {
     const folders = vscode.workspace.workspaceFolders || [];
     const anchor = folders[0];
     const known = this.paths || new Set();
-    const slotIdx = folders.findIndex((f, i) => i > 0 && known.has(path.resolve(f.uri.fsPath)));
+    const slotIdx = folders.findIndex((f, i) => i > 0 && known.has(norm(f.uri.fsPath)));
     return { folders, anchor, slotIdx, active: slotIdx > 0 ? folders[slotIdx].uri.fsPath : anchor && anchor.uri.fsPath };
   }
 
   async refresh() {
-    if (!this.view) return;
     const { folders, active, anchor } = this.roots();
     const cwd = active || (anchor && anchor.uri.fsPath);
     if (!cwd) return this.post({ type: 'error', text: 'Open a folder inside a git repository.' });
@@ -130,17 +115,19 @@ class WorktreeView {
       const top = (await git(cwd, ['rev-parse', '--show-toplevel'])).trim();
       const commonDir = path.resolve(top, (await git(cwd, ['rev-parse', '--git-common-dir'])).trim());
       let items = parsePorcelain(await git(top, ['worktree', 'list', '--porcelain']));
-      this.paths = new Set(items.map((i) => path.resolve(i.path)));
+      this.paths = new Set(items.map((i) => norm(i.path)));
       const r = this.roots();
       if (vscode.workspace.getConfiguration('worktreeSwitch').get('hidePrunable')) items = items.filter((i) => !i.prunable);
       const main = items[0] && items[0].path;
-      const open = new Set(folders.map((f) => path.resolve(f.uri.fsPath)));
+      const open = new Set(folders.map((f) => norm(f.uri.fsPath)));
       for (const i of items) {
-        i.current = path.resolve(i.path) === path.resolve(r.active || top);
-        i.open = !i.current && open.has(path.resolve(i.path));
+        i.current = norm(i.path) === norm(r.active || top);
+        i.open = !i.current && open.has(norm(i.path));
         i.main = i.path === main;
         i.name = path.basename(i.path);
       }
+      this.items = items;
+      this.repoTop = top;
       this.watch(commonDir);
       this.post({ type: 'list', items, openIn: vscode.workspace.getConfiguration('worktreeSwitch').get('openIn') });
     } catch (e) {
@@ -151,10 +138,10 @@ class WorktreeView {
   async hotSwitch(target) {
     const { folders, anchor, slotIdx, active } = this.roots();
     if (!anchor) return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(target), { forceReuseWindow: true });
-    if (active && path.resolve(active) === path.resolve(target)) return;
+    if (active && norm(active) === norm(target)) return;
     const name = path.basename(target);
     const cfg = vscode.workspace.getConfiguration('worktreeSwitch');
-    const toAnchor = path.resolve(target) === path.resolve(anchor.uri.fsPath);
+    const toAnchor = norm(target) === norm(anchor.uri.fsPath);
     if (!toAnchor && slotIdx < 0 && !vscode.workspace.workspaceFile) {
       // First switch: the window turns multi-root and this extension restarts, so move editors before that.
       if (cfg.get('moveEditors')) await moveEditors(active, target);
@@ -197,10 +184,50 @@ class WorktreeView {
       if (vscode.workspace.getConfiguration('worktreeSwitch').get('switchMode') === 'hot') return this.hotSwitch(msg.path);
       return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), { forceReuseWindow: true });
     }
+    if (msg.type === 'delete') return this.deleteWorktree(msg.path);
     if (msg.type === 'copy') {
       await vscode.env.clipboard.writeText(msg.path);
       vscode.window.setStatusBarMessage('Copied ' + msg.path, 2000);
     }
+  }
+
+  // A modal Yes/Cancel question; returns true on Yes. Replaced in the integration tests.
+  async ask(message, detail) {
+    return (await vscode.window.showWarningMessage(message, { modal: true, detail }, 'Yes')) === 'Yes';
+  }
+
+  // Deletes a worktree after a Yes. The main worktree and any folder open in this window are refused.
+  async deleteWorktree(target) {
+    const item = (this.items || []).find((i) => norm(i.path) === norm(target));
+    if (!item) return false;
+    const open = (vscode.workspace.workspaceFolders || []).some((f) => norm(f.uri.fsPath) === norm(target));
+    if (item.main || open) {
+      vscode.window.showWarningMessage(item.main ? 'The main worktree cannot be deleted.' : `Switch away from ${item.name} before deleting it.`);
+      return false;
+    }
+    const branch = item.branch ? `The branch ${item.branch} is kept.` : 'Its commit stays in the repository.';
+    const where = item.prunable ? 'Its folder is already gone; git forgets it.' : `This deletes the folder ${item.path}.`;
+    if (!(await this.ask(`Delete worktree ${item.name}?`, `${where} ${branch}`))) return false;
+    const cwd = this.repoTop;
+    try {
+      await git(cwd, removeArgs(item.path, null));
+    } catch (e) {
+      const refusal = removeRefusal(e.message);
+      if (!refusal) { vscode.window.showErrorMessage(`Could not delete ${item.name}: ${e.message.trim()}`); return false; }
+      const why = refusal === 'locked'
+        ? `${item.name} is locked.`
+        : `${item.name} has uncommitted or untracked changes. They will be lost.`;
+      if (!(await this.ask(`${why} Delete it anyway?`, `This deletes the folder ${item.path}. ${branch}`))) return false;
+      try {
+        await git(cwd, removeArgs(item.path, refusal));
+      } catch (e2) {
+        vscode.window.showErrorMessage(`Could not delete ${item.name}: ${e2.message.trim()}`);
+        return false;
+      }
+    }
+    vscode.window.setStatusBarMessage(`Deleted worktree ${item.name}`, 3000);
+    await this.refresh();
+    return true;
   }
 
   log(m) {
@@ -216,6 +243,7 @@ class WorktreeView {
     const nonce = Math.random().toString(36).slice(2);
     const css = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'view.css'));
     const js = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'view.js'));
+    const filterJs = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'filter.js'));
     return `<!doctype html><html><head><meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
 <link rel="stylesheet" href="${css}"></head><body>
@@ -225,6 +253,7 @@ class WorktreeView {
 </div>
 <div id="count" class="count"></div>
 <ul id="list" role="listbox"></ul>
+<script nonce="${nonce}" src="${filterJs}"></script>
 <script nonce="${nonce}" src="${js}"></script>
 </body></html>`;
   }
@@ -243,6 +272,8 @@ function activate(context) {
     vscode.workspace.onDidChangeConfiguration((e) => e.affectsConfiguration('worktreeSwitch') && provider.refresh()),
     { dispose: () => provider.watchers.forEach((w) => w.dispose()) },
   );
+  provider.refresh();
+  return { provider }; // used by the integration tests
 }
 
 module.exports = { activate, deactivate() {} };

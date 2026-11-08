@@ -38,3 +38,4 @@ li .act { visibility: hidden; border: none; background: transparent; color: inhe
 li:hover .act, li.sel .act { visibility: visible; }
 mark { background: var(--vscode-editor-findMatchHighlightBackground); color: inherit; }
 .err { opacity: .8; font-style: italic; }
+li .act.del:hover { color: var(--vscode-errorForeground); }
