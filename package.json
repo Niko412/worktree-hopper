@@ -2,8 +2,8 @@
   "name": "worktree-switch",
   "displayName": "Worktree Switch",
   "description": "A Worktrees panel in Source Control: search by text or regex and switch git worktrees in place, without reloading the window.",
-  "version": "0.5.0",
-  "publisher": "niko412",
+  "version": "0.5.1",
+  "publisher": "NikolayChernuha",
   "author": {
     "name": "Nikolay Chernuha"
   },

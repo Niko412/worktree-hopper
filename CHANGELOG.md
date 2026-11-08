@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1
+
+- Published under the Marketplace publisher `NikolayChernuha` (the extension id is now
+  `NikolayChernuha.worktree-switch`).
+
 ## 0.5.0
 
 - Delete a worktree from its row (🗑, or the Delete key) after a Yes/Cancel question. A worktree with uncommitted
