@@ -1,9 +1,9 @@
 # Worktree Switch
 
 [![Build](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml/badge.svg)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
-[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/niko412.worktree-switch?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=niko412.worktree-switch)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/niko412.worktree-switch)](https://marketplace.visualstudio.com/items?itemName=niko412.worktree-switch)
-[![Open VSX](https://img.shields.io/open-vsx/v/niko412/worktree-switch?label=Open%20VSX)](https://open-vsx.org/extension/niko412/worktree-switch)
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/NikolayChernuha.worktree-switch?label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-switch)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/NikolayChernuha.worktree-switch)](https://marketplace.visualstudio.com/items?itemName=NikolayChernuha.worktree-switch)
+[![Open VSX](https://img.shields.io/open-vsx/v/NikolayChernuha/worktree-switch?label=Open%20VSX)](https://open-vsx.org/extension/NikolayChernuha/worktree-switch)
 [![Tested on VS Code](https://img.shields.io/badge/tested%20on%20VS%20Code-1.85%20%7C%20stable-007ACC)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
 [![Tested on](https://img.shields.io/badge/tested%20on-Linux%20%7C%20Windows%20%7C%20macOS-555)](https://github.com/Niko412/worktree-switch/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/Niko412/worktree-switch/blob/main/LICENSE)
