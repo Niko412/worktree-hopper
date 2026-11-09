@@ -73,10 +73,11 @@ A release is a `vX.Y.Z` tag on `main`; nothing else publishes.
   2. In it, **Certificates & secrets → Federated credentials → Add**: *GitHub Actions deploying Azure resources*,
      organisation `Niko412`, repository `worktree-hopper`, entity *Environment*, name `marketplace`. That
      environment exists in this repository and only `v*` tags may run in it.
-  3. Add the app as a member of the publisher on the
-     [Marketplace management page](https://marketplace.visualstudio.com/manage) (Members → Add, role
-     *Contributor*), by the user id Azure DevOps gives the app.
-  4. Add the repository **variables** `AZURE_CLIENT_ID` (the app's client id) and `AZURE_TENANT_ID`.
+  3. Add the repository **variables** `AZURE_CLIENT_ID` (the app's client id) and `AZURE_TENANT_ID`.
+  4. Push the next release tag. The `publish-marketplace` job prints *Marketplace user id of this app* and then
+     fails, because the app is not a member of the publisher yet. Add that id on the
+     [Marketplace management page](https://marketplace.visualstudio.com/manage) (publisher → Members → Add, role
+     *Contributor*), then re-run the failed job.
 
 Tags `v*` cannot be moved or deleted, and `main` cannot be force-pushed or deleted (repository rulesets).
 

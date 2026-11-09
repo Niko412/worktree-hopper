@@ -174,5 +174,11 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           allow-no-subscriptions: true
+      - name: Show the app's Marketplace user id (add it under the publisher's Members once)
+        run: |
+          id="$(az rest --method get \
+            --url 'https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.1-preview.3' \
+            --resource 499b84ac-1321-427f-aa17-267ca6975798 --query id -o tsv)"
+          echo "::notice::Marketplace user id of this app: $id"
       - name: Publish to the Visual Studio Marketplace
         run: npx --yes @vscode/vsce@3 publish --azure-credential --packagePath worktree-hopper-*.vsix
