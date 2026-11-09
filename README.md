@@ -59,27 +59,16 @@ A release is a `vX.Y.Z` tag on `main`; nothing else publishes.
    `vX.Y.Z`, `package.json`, `package-lock.json` and the newest `CHANGELOG.md` entry carry that version, its commit is on `main`, it is
    higher than every earlier release, and it was not released before. After the tests pass, CI builds the `.vsix`,
    checks the version inside it too, and attaches it to a GitHub release.
-4. CI then publishes that same `.vsix` to Open VSX, and to the Visual Studio Marketplace once that is set up
-   (below); until then upload it on the [Marketplace](https://marketplace.visualstudio.com/manage) (Update).
+4. CI then publishes that same `.vsix` to Open VSX and the Visual Studio Marketplace (below), with no secret.
 
 ### Publishing from CI
 
 - **Open VSX:** trusted publishing, no token or secret. At open-vsx.org → Settings → Trusted publishers the
   namespace `NikolayChernuha` trusts GitHub `Niko412/worktree-hopper`, workflow `build.yml`, environment `openvsx`
   (which only `v*` tags may use). The job exchanges GitHub's OIDC token for a short-lived Open VSX one.
-- **Visual Studio Marketplace**, without a stored secret (Entra ID with GitHub's OIDC token; Azure DevOps personal
-  access tokens for all organisations stop working on 1 December 2026):
-  1. In the Azure portal, **Microsoft Entra ID → App registrations → New registration** (free, no subscription).
-  2. In it, **Certificates & secrets → Federated credentials → Add**: *GitHub Actions deploying Azure resources*,
-     organisation `Niko412`, repository `worktree-hopper`, entity *Environment*, name `marketplace`. That
-     environment exists in this repository and only `v*` tags may run in it.
-  3. Add the repository **variables** `AZURE_CLIENT_ID` (the app's client id) and `AZURE_TENANT_ID`.
-  4. Push the next release tag. The `publish-marketplace` job prints *Marketplace user id of this app* and then
-     fails, because the app is not a member of the publisher yet. Add that id on the
-     [Marketplace management page](https://marketplace.visualstudio.com/manage) (publisher → Members → Add, role
-     *Contributor*), then re-run the failed job.
-
-Tags `v*` cannot be moved or deleted, and `main` cannot be force-pushed or deleted (repository rulesets).
+- **Visual Studio Marketplace:** trusted publishing too. On the publisher page (Trusted Publishing tab) the
+  publisher `NikolayChernuha` trusts GitHub Actions `Niko412/worktree-hopper`, workflow `build.yml`, environment
+  `marketplace` (`v*` tags only); `vsce publish --oidc` exchanges GitHub's OIDC token for a short session.
 
 ## Contributing
 
