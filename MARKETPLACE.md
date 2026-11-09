@@ -26,9 +26,10 @@ reload, and losing your terminals and chat. With Worktree Hopper it is one click
   and `locked`. ● marks the active one.
 - **Search by text or regex.** Name, branch or path, with matches highlighted. **Alt+R** or `.*` toggles regular
   expressions.
-- **Hot switch.** No reload: extensions, terminals and chat panels keep running.
+- **Switch in place, no reload.** The window holds just the active worktree, like a normal repository; editors and
+  terminals stay open. (Prefer instant switches with nothing restarting? See *How switching works*.)
 - **Your editors come along.** Open files reopen at the same path in the new worktree; unsaved ones stay put.
-- **Source Control follows.** Changes and the Graph show the active worktree, scrolled to its current commit.
+- **Source Control follows.** Changes and the Graph show the active worktree.
 - **Delete with a confirmation.** 🗑 (or the Delete key) asks Yes/Cancel. Uncommitted changes or a lock ask a
   second time. The branch is kept.
 - **New window when you want one.** Alt+click, or ⧉ on the row.
@@ -45,27 +46,27 @@ reload, and losing your terminals and chat. With Worktree Hopper it is one click
 | **Alt+R** | Toggle regular expressions |
 | **Esc** | Clear the search |
 
-## How the hot switch works
+## How switching works
 
-VS Code restarts every extension when the *first* folder of a window changes, and not when a later one does. So
-the folder you opened stays first, and the active worktree is swapped in as a second folder:
+`worktreeHopper.switchMode` chooses how a click switches this window:
 
-- The **first** switch turns the window into a multi-root workspace (extensions restart once; the window does not
-  reload).
-- **Every switch after that is instant.**
-- Switching back to the first folder removes the second one.
-
-Prefer one folder per window? Set `worktreeHopper.switchMode` to `reload`.
+- **`single`** (default): the window holds only the active worktree, so Explorer and Source Control look exactly
+  like a normal repository. The window does not reload, and editors and terminals stay; VS Code restarts the
+  extensions for a moment, because a window's first folder changed.
+- **`twoRoots`**: the folder you opened stays first and the worktree is swapped in as a second folder. Switching is
+  instant and nothing restarts, but Explorer and Source Control show two roots. The first switch turns a
+  single-folder window into a workspace.
+- **`reload`**: reopen the window on the worktree.
 
 ## Settings
 
 | Setting | Default | What it does |
 |---|---|---|
-| `worktreeHopper.switchMode` | `hot` | `hot` swaps the worktree in place; `reload` reopens the window on it. |
+| `worktreeHopper.switchMode` | `single` | `single`: only the active worktree in the window; `twoRoots`: instant, as a second folder; `reload`: reopen the window. |
 | `worktreeHopper.openIn` | `sameWindow` | Where a plain click opens. Alt+click does the other. |
-| `worktreeHopper.moveEditors` | `true` | On a hot switch, reopen open editors in the new worktree. |
-| `worktreeHopper.followInGit` | `true` | On a hot switch, show only the active worktree in Source Control. |
-| `worktreeHopper.revealInGraph` | `true` | After a hot switch, scroll the Graph to the worktree's current commit. |
+| `worktreeHopper.moveEditors` | `true` | On a switch in this window, reopen open editors in the new worktree. |
+| `worktreeHopper.followInGit` | `true` | In `twoRoots` mode, show only the active worktree in Source Control. |
+| `worktreeHopper.revealInGraph` | `true` | In `twoRoots` mode, scroll the Graph to the worktree's current commit. |
 | `worktreeHopper.hidePrunable` | `false` | Hide worktrees whose folder is gone. |
 
 ## Tips

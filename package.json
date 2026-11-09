@@ -2,7 +2,7 @@
   "name": "worktree-hopper",
   "displayName": "Worktree Hopper",
   "description": "A Worktrees panel in Source Control: search by text or regex and switch git worktrees in place, without reloading the window.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "NikolayChernuha",
   "author": {
     "name": "Nikolay Chernuha"
@@ -98,30 +98,32 @@
         "worktreeHopper.switchMode": {
           "type": "string",
           "enum": [
-            "hot",
+            "single",
+            "twoRoots",
             "reload"
           ],
           "enumDescriptions": [
-            "Swap the worktree as a second workspace folder: no reload, extensions keep running. The first switch turns the window multi-root once.",
+            "The window holds only the active worktree, like a normal repository. Each switch restarts the extensions for a moment; the window does not reload.",
+            "The first folder stays and the worktree is swapped in as a second one: instant, nothing restarts, but Explorer and Source Control show two roots.",
             "Reopen the window on the worktree (full reload)."
           ],
-          "default": "hot",
+          "default": "single",
           "description": "How switching in the current window works."
         },
         "worktreeHopper.moveEditors": {
           "type": "boolean",
           "default": true,
-          "description": "On a hot switch, reopen open editors at the same path in the new worktree (unsaved ones stay)."
+          "description": "On a switch in this window, reopen open editors at the same path in the new worktree (unsaved ones stay)."
         },
         "worktreeHopper.followInGit": {
           "type": "boolean",
           "default": true,
-          "description": "On a hot switch, close the previous worktree's repository in Source Control so Changes and the Graph show only the active one."
+          "description": "In twoRoots mode, close the previous worktree's repository in Source Control so Changes and the Graph show only the active one."
         },
         "worktreeHopper.revealInGraph": {
           "type": "boolean",
           "default": true,
-          "description": "After a hot switch, scroll the Graph to the worktree's current commit."
+          "description": "In twoRoots mode, scroll the Graph to the worktree's current commit after a switch."
         },
         "worktreeHopper.hidePrunable": {
           "type": "boolean",

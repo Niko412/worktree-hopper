@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.1
+
+- **A switch now looks like a normal repository** (new default `worktreeHopper.switchMode: single`): the window
+  holds only the active worktree, with one root in Explorer and Source Control. The window does not reload; the
+  extensions restart for a moment. The instant two-folder switch is `twoRoots` (1.0.0's `hot`, which still works).
+- Fixed: the panel sometimes showed only its search box and no worktrees. It now listens before its page loads
+  and sends its last list again whenever the page is ready.
+- The repository is found in any folder of the window, not only the first, so a window that starts with a plain
+  folder (or a parent of several repositories) works.
+- When git fails, the panel says why (git not on the PATH, an unsafe repository, ...) and the log has every
+  folder tried (Output → Worktree Hopper).
+- With the pre-1.0 *Worktree Switch* still installed there were two Worktrees panels; Worktree Hopper now offers to
+  uninstall it.
+
 ## 1.0.0
 
 First release on the Visual Studio Marketplace and Open VSX, as **Worktree Hopper**

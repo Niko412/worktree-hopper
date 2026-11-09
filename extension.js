@@ -4,16 +4,21 @@ const cp = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { parsePorcelain, removeRefusal, removeArgs, normalizePath } = require('./lib/worktrees');
+const { planSwitch } = require('./lib/plan');
 
 // Real path first (symlinks, Windows short names like RUNNER~1), then one comparable form.
 const realpath = (p) => { try { return fs.realpathSync.native(p); } catch (e) { return p; } };
 const norm = (p) => normalizePath(realpath(p), process.platform);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const firstLine = (t) => String(t || '').trim().split('\n')[0];
 
 function git(cwd, args) {
   return new Promise((resolve, reject) => {
-    cp.execFile('git', args, { cwd, maxBuffer: 4 * 1024 * 1024 }, (err, out, errOut) =>
-      err ? reject(new Error(errOut || err.message)) : resolve(out));
+    cp.execFile('git', args, { cwd, maxBuffer: 4 * 1024 * 1024 }, (err, out, errOut) => {
+      if (!err) return resolve(out);
+      if (err.code === 'ENOENT') return reject(new Error('git was not found on the PATH of this machine'));
+      return reject(new Error(errOut || err.message));
+    });
   });
 }
 
@@ -106,8 +111,9 @@ class WorktreeView {
   resolveWebviewView(view) {
     this.view = view;
     view.webview.options = { enableScripts: true };
-    view.webview.html = this.html(view.webview);
+    // Listen before the page loads: its 'ready' can come at once, and a message lost here leaves an empty list.
     view.webview.onDidReceiveMessage((msg) => this.onMessage(msg));
+    view.webview.html = this.html(view.webview);
     view.onDidChangeVisibility(() => view.visible && this.refresh());
     this.refresh().then(() => {
       const r = this.roots();
@@ -129,21 +135,42 @@ class WorktreeView {
     return { folders, anchor, slotIdx, active: slotIdx > 0 ? folders[slotIdx].uri.fsPath : anchor && anchor.uri.fsPath };
   }
 
+  // The repository to list: the active worktree first, then every workspace folder in order,
+  // so a window whose first folder is not a repository (or a parent of several) still works.
+  async findRepo() {
+    const { folders, active } = this.roots();
+    const candidates = [...new Set([active, ...folders.map((f) => f.uri.fsPath)].filter(Boolean))];
+    const failures = [];
+    for (const cwd of candidates) {
+      try {
+        const top = (await git(cwd, ['rev-parse', '--show-toplevel'])).trim();
+        const commonDir = path.resolve(top, (await git(cwd, ['rev-parse', '--git-common-dir'])).trim());
+        return { top, commonDir };
+      } catch (e) {
+        failures.push(`${cwd}: ${firstLine(e.message)}`);
+      }
+    }
+    return { failures, empty: candidates.length === 0 };
+  }
+
   async refresh() {
-    const { folders, active, anchor } = this.roots();
-    const cwd = active || (anchor && anchor.uri.fsPath);
-    if (!cwd) return this.post({ type: 'error', text: 'Open a folder inside a git repository.' });
+    const repo = await this.findRepo();
+    if (!repo.top) {
+      if (repo.empty) return this.post({ type: 'error', text: 'Open a folder inside a git repository.' });
+      for (const f of repo.failures) this.log('no repository: ' + f);
+      return this.post({ type: 'error', text: 'No git repository here. ' + repo.failures[0] });
+    }
+    const { top, commonDir } = repo;
     try {
-      const top = (await git(cwd, ['rev-parse', '--show-toplevel'])).trim();
-      const commonDir = path.resolve(top, (await git(cwd, ['rev-parse', '--git-common-dir'])).trim());
       let items = parsePorcelain(await git(top, ['worktree', 'list', '--porcelain']));
       this.paths = new Set(items.map((i) => norm(i.path)));
       const r = this.roots();
       if (vscode.workspace.getConfiguration('worktreeHopper').get('hidePrunable')) items = items.filter((i) => !i.prunable);
       const main = items[0] && items[0].path;
-      const open = new Set(folders.map((f) => norm(f.uri.fsPath)));
+      const open = new Set(r.folders.map((f) => norm(f.uri.fsPath)));
+      const activeRoot = r.slotIdx > 0 ? r.active : top;
       for (const i of items) {
-        i.current = norm(i.path) === norm(r.active || top);
+        i.current = norm(i.path) === norm(activeRoot);
         i.open = !i.current && open.has(norm(i.path));
         i.main = i.path === main;
         i.name = path.basename(i.path);
@@ -153,29 +180,43 @@ class WorktreeView {
       this.watch(commonDir);
       this.post({ type: 'list', items, openIn: vscode.workspace.getConfiguration('worktreeHopper').get('openIn') });
     } catch (e) {
-      this.post({ type: 'error', text: 'Not a git repository: ' + cwd });
+      this.log('git worktree list failed: ' + e.message.trim());
+      this.post({ type: 'error', text: 'git worktree list failed: ' + firstLine(e.message) });
     }
   }
 
-  async hotSwitch(target) {
-    const { folders, anchor, slotIdx, active } = this.roots();
-    if (!anchor) return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(target), { forceReuseWindow: true });
-    if (active && norm(active) === norm(target)) return;
-    const name = path.basename(target);
+  // Switches this window to `target` as planSwitch (lib/plan.js) decides for the current mode.
+  async switchTo(target) {
     const cfg = vscode.workspace.getConfiguration('worktreeHopper');
-    const toAnchor = norm(target) === norm(anchor.uri.fsPath);
-    if (!toAnchor && slotIdx < 0 && !vscode.workspace.workspaceFile) {
-      // First switch: the window turns multi-root and this extension restarts, so move editors before that.
+    const { folders, slotIdx, active } = this.roots();
+    const plan = planSwitch({
+      mode: cfg.get('switchMode'),
+      folders: folders.map((f) => f.uri.fsPath),
+      slotIdx,
+      target,
+      same: (a, b) => norm(a) === norm(b),
+      hasWorkspaceFile: !!vscode.workspace.workspaceFile,
+    });
+    const name = path.basename(target);
+    const add = plan.add ? [{ uri: vscode.Uri.file(plan.add), name: path.basename(plan.add) }] : [];
+    this.log(`switch to ${name}: ${JSON.stringify(plan)}`);
+
+    if (plan.op === 'none') return;
+    if (plan.op === 'open') {
+      return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(target), { forceReuseWindow: true });
+    }
+    if (plan.restarts) {
+      // VS Code restarts the extensions (this one too) when the change lands, so move the editors first
+      // and hand the change over without waiting for it.
       if (cfg.get('moveEditors')) await moveEditors(active, target);
-      vscode.window.setStatusBarMessage('Worktree Hopper: window becomes multi-root once; later switches are instant', 5000);
-      vscode.workspace.updateWorkspaceFolders(folders.length, 0, { uri: vscode.Uri.file(target), name });
+      vscode.window.setStatusBarMessage(`Switching to ${name}…`, 5000);
+      if (!vscode.workspace.updateWorkspaceFolders(plan.start, plan.deleteCount, ...add)) {
+        // A change VS Code is still confirming: fall back to reopening the window on the worktree.
+        await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(target), { forceReuseWindow: true });
+      }
       return;
     }
-    let ok;
-    if (toAnchor) ok = await updateFolders(slotIdx, 1);
-    else if (slotIdx > 0) ok = await updateFolders(slotIdx, 1, { uri: vscode.Uri.file(target), name });
-    else ok = await updateFolders(folders.length, 0, { uri: vscode.Uri.file(target), name });
-    if (!ok) {
+    if (!(await updateFolders(plan.start, plan.deleteCount, ...add))) {
       this.log(`switch to ${name} was not accepted by VS Code`);
       vscode.window.showWarningMessage(`Could not switch to ${name}. Try again.`);
       return;
@@ -187,6 +228,9 @@ class WorktreeView {
     if (cfg.get('revealInGraph')) revealGraphHead(target, (m) => this.log(m));
     vscode.window.setStatusBarMessage('Switched to ' + name, 2000);
   }
+
+  // The 1.0.0 entry point, kept for the integration tests (they run in twoRoots mode).
+  hotSwitch(target) { return this.switchTo(target); }
 
   watch(commonDir) {
     if (this.watchedDir === commonDir) return;
@@ -201,7 +245,11 @@ class WorktreeView {
   }
 
   async onMessage(msg) {
-    if (msg.type === 'ready') return this.refresh();
+    if (msg.type === 'ready') {
+      this.pageReady = true;
+      if (this.lastState) this.view.webview.postMessage(this.lastState);
+      return this.refresh();
+    }
     if (msg.type === 'refresh') return this.refresh();
     if (msg.type === 'open') {
       if (!fs.existsSync(msg.path)) {
@@ -209,8 +257,7 @@ class WorktreeView {
         return;
       }
       if (msg.newWindow) return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), { forceNewWindow: true });
-      if (vscode.workspace.getConfiguration('worktreeHopper').get('switchMode') === 'hot') return this.hotSwitch(msg.path);
-      return vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), { forceReuseWindow: true });
+      return this.switchTo(msg.path);
     }
     if (msg.type === 'delete') return this.deleteWorktree(msg.path);
     if (msg.type === 'copy') {
@@ -290,7 +337,11 @@ class WorktreeView {
 
   focusSearch() { this.post({ type: 'focus' }); }
 
-  post(m) { if (this.view) this.view.webview.postMessage(m); }
+  // Keeps the last list or error, so a page that loads later (or reloads) gets it on 'ready'.
+  post(m) {
+    if (m.type === 'list' || m.type === 'error') this.lastState = m;
+    if (this.view) this.view.webview.postMessage(m);
+  }
 
   html(webview) {
     const nonce = Math.random().toString(36).slice(2);
@@ -312,6 +363,18 @@ class WorktreeView {
   }
 }
 
+// The pre-1.0 builds were "Worktree Switch" (another id); both installed means two Worktrees panels.
+async function warnAboutOldExtension() {
+  const old = ['NikolayChernuha.worktree-switch', 'niko412.worktree-switch', 'centralad.worktree-switch']
+    .find((id) => vscode.extensions.getExtension(id));
+  if (!old) return;
+  const choice = await vscode.window.showWarningMessage(
+    `Worktree Hopper replaces ${old} (Worktree Switch). With both installed there are two Worktrees panels.`,
+    'Uninstall the old one',
+  );
+  if (choice) await vscode.commands.executeCommand('workbench.extensions.uninstallExtension', old);
+}
+
 function activate(context) {
   const provider = new WorktreeView(context);
   context.subscriptions.push(
@@ -326,6 +389,7 @@ function activate(context) {
     { dispose: () => provider.watchers.forEach((w) => w.dispose()) },
   );
   provider.refresh();
+  warnAboutOldExtension();
   return { provider }; // used by the integration tests
 }
 
