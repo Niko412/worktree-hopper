@@ -126,11 +126,9 @@ jobs:
           gh release create "$GITHUB_REF_NAME" "worktree-hopper-${GITHUB_REF_NAME#v}.vsix" \
             --title "$GITHUB_REF_NAME" --notes "$(awk '/^## /{n++} n==1' CHANGELOG.md | tail -n +2)"
 
-  # Publishing to the stores runs only after the GitHub release:
-  #   Open VSX: trusted publishing (registered at open-vsx.org for build.yml and the openvsx environment).
-  #   Visual Studio Marketplace, once set up: the repository variables AZURE_CLIENT_ID and AZURE_TENANT_ID of an Entra ID
-  #   app registration whose federated credential trusts this repository's `marketplace` environment
-  #   (which only v* tags may use); no secret is stored.
+  # Publishing to the stores runs only after the GitHub release, by trusted publishing (OIDC), with no secret:
+  #   Open VSX trusts build.yml in the openvsx environment; the Visual Studio Marketplace trusts build.yml in the
+  #   marketplace environment. Only v* tags may use either environment.
   publish-openvsx:
     needs: release
     if: startsWith(github.ref, 'refs/tags/v')
@@ -154,8 +152,10 @@ jobs:
 
   publish-marketplace:
     needs: release
-    if: startsWith(github.ref, 'refs/tags/v') && vars.AZURE_CLIENT_ID != ''
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    # Visual Studio Marketplace trusted publishing: the publisher NikolayChernuha trusts this workflow (build.yml)
+    # in this environment, which only v* tags may use; vsce exchanges GitHub's OIDC token for a session. No secret.
     environment: marketplace
     permissions:
       contents: read
@@ -168,17 +168,5 @@ jobs:
           node-version: 22
       - name: Download the release's .vsix
         run: gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --pattern '*.vsix'
-      - name: Sign in to Entra ID with GitHub's OIDC token
-        uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          allow-no-subscriptions: true
-      - name: Show the app's Marketplace user id (add it under the publisher's Members once)
-        run: |
-          id="$(az rest --method get \
-            --url 'https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.1-preview.3' \
-            --resource 499b84ac-1321-427f-aa17-267ca6975798 --query id -o tsv)"
-          echo "::notice::Marketplace user id of this app: $id"
       - name: Publish to the Visual Studio Marketplace
-        run: npx --yes @vscode/vsce@3 publish --azure-credential --packagePath worktree-hopper-*.vsix
+        run: npx --yes @vscode/vsce@4.1.0 publish --oidc --packagePath worktree-hopper-*.vsix
