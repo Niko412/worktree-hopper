@@ -59,14 +59,14 @@ A release is a `vX.Y.Z` tag on `main`; nothing else publishes.
    `vX.Y.Z`, `package.json`, `package-lock.json` and the newest `CHANGELOG.md` entry carry that version, its commit is on `main`, it is
    higher than every earlier release, and it was not released before. After the tests pass, CI builds the `.vsix`,
    checks the version inside it too, and attaches it to a GitHub release.
-4. CI then publishes that same `.vsix` to Open VSX and to the Visual Studio Marketplace, each once its
-   credentials are set up (below). Until then the job says so and skips, and the `.vsix` is uploaded by hand: the
-   [Marketplace](https://marketplace.visualstudio.com/manage) (Update) and `npx ovsx publish <file> -p <token>`.
+4. CI then publishes that same `.vsix` to Open VSX, and to the Visual Studio Marketplace once that is set up
+   (below); until then upload it on the [Marketplace](https://marketplace.visualstudio.com/manage) (Update).
 
 ### Publishing from CI
 
-- **Open VSX:** create an access token at open-vsx.org (profile → Access Tokens) and add it as the repository
-  secret `OVSX_PAT`.
+- **Open VSX:** trusted publishing, no token or secret. At open-vsx.org → Settings → Trusted publishers the
+  namespace `NikolayChernuha` trusts GitHub `Niko412/worktree-hopper`, workflow `build.yml`, environment `openvsx`
+  (which only `v*` tags may use). The job exchanges GitHub's OIDC token for a short-lived Open VSX one.
 - **Visual Studio Marketplace**, without a stored secret (Entra ID with GitHub's OIDC token; Azure DevOps personal
   access tokens for all organisations stop working on 1 December 2026):
   1. In the Azure portal, **Microsoft Entra ID → App registrations → New registration** (free, no subscription).
