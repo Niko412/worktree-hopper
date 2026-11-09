@@ -32,7 +32,8 @@ async function run() {
 
   // The panel shows what the extension last posted, whenever its page loads (no empty list).
   await vscode.commands.executeCommand('worktreeHopper.focus');
-  await sleep(1500);
+  // Poll: a slow runner (macOS) can take several seconds to load the webview.
+  for (let waited = 0; provider.pageReady !== true && waited < 15000; waited += 250) await sleep(250);
   assert.equal(provider.pageReady, true, 'the panel page never said ready');
   console.log('ok - the panel page loads and is answered');
 }
